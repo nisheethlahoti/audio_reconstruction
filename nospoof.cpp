@@ -20,9 +20,6 @@
 #include <thread>
 
 #include <pcap.h>
-#include <arpa/inet.h>
-#include <linux/ip.h>
-#include <linux/udp.h>
 #include <unistd.h>
 
 using namespace std;
