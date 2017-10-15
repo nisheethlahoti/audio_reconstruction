@@ -1,17 +1,5 @@
+// WIFI CRC POLYNOMIAL IS 1 00000100 11000001 00011101 10110111
 
-/**
- * Hello, and welcome to this brief, but hopefully complete, example file for
- * wireless packet injection using pcap.
- *
- * Although there are various resources for this spread on the web, it is hard
- * to find a single, cohesive piece that shows how everything fits together.
- * This file aims to give such an example, constructing a fully valid UDP packet
- * all the way from the 802.11 PHY header (through radiotap) to the data part of
- * the packet and then injecting it on a wireless interface
- *
- * Skip down a couple of lines, as the following is just headers and such that
- * we need.
- */
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -25,6 +13,7 @@
 
 #include <pcap.h>
 #include <unistd.h>
+#include "magic_number.h"
 
 using namespace std;
 using namespace chrono;
@@ -32,10 +21,8 @@ using namespace chrono;
 size_t const packet_samples = 240;
 uint16_t const sample_rate = 480; // samples per 10 milliseconds
 uint16_t const redundancy = 4;
-array<uint8_t, 4> const magic_number = {0x16, 0xb9, 0x72, 0x99};
-array<uint8_t, 4> const uid = {};
 
-uint32_t packet_num = 0;
+uint32_t packet_num = 1;
 
 const uint8_t u8aRadiotapHeader[] = {
   0x00, 0x00, // <-- radiotap version (ignore this)
