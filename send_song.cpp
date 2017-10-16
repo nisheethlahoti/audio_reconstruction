@@ -134,17 +134,20 @@ int32_t shift(int32_t ret, int amount) {
 
 size_t song_pos = 0;
 uint8_t* fill_packet(uint8_t *pos){
-  for (int i=0; i<4; ++i)
-    *pos++ = (packet_num>>(8*i)) & 0xff;
+  for (int i=0; i<4; ++i) {
+    pos[i] = (packet_num>>(8*i)) & 0xff;
+    pos[i+4] = pos[i] ^ magic_number[i];
+  }
+  pos += 8;
 
   for (int i=0; i<packet_samples; ++i) {
-	for (int t=0; t<num_channels; ++t) {
-		int32_t val = shift(song.value(song_pos, t), (8*byte_depth-16)); // Converting 16 bit to required size.
-		for (int j=0; j<byte_depth; ++j) {
-			pos[byte_depth*num_channels*i + t*byte_depth + j] = (val>>(8*j)) & 0xff;
+		for (int t=0; t<num_channels; ++t) {
+			int32_t val = shift(song.value(song_pos, t), (8*byte_depth-16)); // Converting 16 bit to required size.
+			for (int j=0; j<byte_depth; ++j) {
+				pos[byte_depth*num_channels*i + t*byte_depth + j] = (val>>(8*j)) & 0xff;
+			}
 		}
-	}
-    song_pos++;
+	  song_pos++;
   }
   ++packet_num;
 
@@ -154,15 +157,20 @@ uint8_t* fill_packet(uint8_t *pos){
 int main(int argc, char **argv) {
   if (argc < 2) {
     cerr << "Not enough arguments\n";
-    return 0;
+    return 1;
   }
 
   if (argc > 2)
 	u8aRadiotapHeader[17] = atoi(argv[2]); // = twice the intended data rate.
 
-  int redundancy = 4;
-  if (argc > 3)
-	redundancy = atoi(argv[3]);
+  int redundancy = max_redundancy;
+  if (argc > 3) {
+    redundancy = atoi(argv[3]);
+    if (redundancy > max_redundancy) {
+      cerr << "Given redundancy exceeeds the maximum redundancy allowed.\n";
+      return 1;
+    }
+  }
 
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -173,7 +181,6 @@ int main(int argc, char **argv) {
 
   copy_and_shift(u8aRadiotapHeader, u8aRadiotapHeader + sizeof u8aRadiotapHeader, packet_loc);
   copy_and_shift(mac_header.begin(), mac_header.end(), packet_loc);
-  copy_and_shift(magic_number.begin(), magic_number.end(), packet_loc);
   copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
   ppcap = pcap_open_live(argv[1], 800, 1, 20, errbuf);

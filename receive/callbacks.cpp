@@ -15,6 +15,10 @@ static uint16_t write_id = 0;
 
 static uint32_t latest_packet_number = 0;
 
+typedef array<uint8_t, packet_size> packet_t;
+
+packet_t packet_versions[max_redundancy], *packet_versions_end = packet_versions;
+
 static uint32_t const crctable[] = {
    0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L, 0x706af48fL, 0xe963a535L, 0x9e6495a3L,
    0x0edb8832L, 0x79dcb8a4L, 0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L, 0x90bf1d91L,
@@ -67,12 +71,17 @@ static inline uint32_t get_little_endian(uint8_t *bytes) {
 }
 
 static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
+	uint8_t *startpos = packet + useless_length;
 	if (size != packet_size) {
 		return {packet_result_type::invalid_size, static_cast<uint32_t>(size)};
 	}
 
-	if (!equal(magic_number.begin(), magic_number.end(), packet+useless_length)) {
-		return {packet_result_type::invalid_magic_number, get_little_endian(packet + useless_length)};
+	array<uint8_t, 4> xor_val = magic_number;
+	for (int i=0; i<4; ++i) {
+		xor_val[i] ^= startpos[i] ^ startpos[i+4] ^ startpos[i+8];
+	}
+	if (xor_val != array<uint8_t, 4>()) {
+		return {packet_result_type::invalid_magic_number, get_little_endian(startpos)};
 	}
 
 	uint32_t expected_crc = crc32(packet, size-4), received_crc = get_little_endian(packet+size-4);
@@ -80,26 +89,23 @@ static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
 		return {packet_result_type::invalid_crc, received_crc, expected_crc};
 	}
 
-	packet += useless_length + magic_number.size();
-
-	if (!equal(uid.begin(), uid.end(), packet)) {
-		return {packet_result_type::invalid_uid, get_little_endian(packet)};
+	if (!equal(uid.begin(), uid.end(), startpos)) {
+		return {packet_result_type::invalid_uid, get_little_endian(startpos)};
 	}
-	packet += uid.size();
+	startpos += uid.size();
 
-	uint32_t packet_number = get_little_endian(packet);
+	uint32_t packet_number = get_little_endian(startpos);
 	if (packet_number <= latest_packet_number) {
 		return {packet_result_type::older_packet, packet_number, latest_packet_number};
 	}
-	packet += 4; // Size of packet_number
+	startpos += 8; // Skipping ahead of packet_number and the XOR
 
 	if (read_id > write_id && read_id < write_id + packet_samples) {
 		return {packet_result_type::full_buffer, packet_number};
 	}
 
 	latest_packet_number = packet_number;
-
-	memcpy(circ_buf.data() + write_id, packet, packet_samples * sizeof circ_buf[0]);
+	memcpy(circ_buf.data() + write_id, startpos, packet_samples * sizeof circ_buf[0]);
 
 	write_id += packet_samples;
     if (write_id == circ_buf.size())
