@@ -4,10 +4,7 @@
 #include <cstdint>
 #include "../magic_number.h"
 
-constexpr size_t useless_length = 32; // Length at beginning of packet that is useless. (Due to MAC header, right now.)
-
 constexpr size_t packet_size = byte_depth * num_channels * packet_samples
-	+ useless_length
 	+ magic_number.size() + uid.size() + 4 /*packet number*/
 	+ 4 /*FCS*/;
 
