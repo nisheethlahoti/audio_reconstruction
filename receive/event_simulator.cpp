@@ -11,16 +11,16 @@
 using namespace std;
 wav_t wav;
 
+sample_t dac_sample;
+
 uint64_t increment_micros_100 = 100000000ULL / samples_per_s;
 void send_sample(sample_t sample) {
-	wav.samples.push_back(sample);
+	dac_sample = sample;
 }
 
+
 int main(int argc, char* argv[]) {
-	{
-		sample_t sample;
-		assert(sizeof sample == byte_depth * num_channels);
-	}
+	assert(sizeof dac_sample == byte_depth * num_channels);
 
 	pcap_file pcap_f(argv[1]);
 	uint64_t current_time = (pcap_f.packets[0].time()-100000)*100;
@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
 		while (current_time < packet.time()*100) {
 			current_time += increment_micros_100;
 			timer_callback();
+			wav.samples.push_back(dac_sample);
 		}
 		receive_callback(packet.packet_pos(), packet.packet_len());
 	}

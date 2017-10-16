@@ -112,9 +112,16 @@ void receive_callback(uint8_t *packet, size_t size) {
 }
 
 void timer_callback() {
+  static uint32_t reader_waiting_counter = 0;
   if (read_id != write_id) {
+    if (reader_waiting_counter > 0) {
+	  packet_result_t({packet_result_type::reader_waiting, reader_waiting_counter}).log();
+      reader_waiting_counter = 0;
+    }
     send_sample(circ_buf[read_id++]);
     if (read_id == circ_buf.size())
       read_id = 0;
+  } else {
+    ++reader_waiting_counter;
   }
 }

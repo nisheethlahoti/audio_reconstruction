@@ -26,5 +26,8 @@ void packet_result_t::log() {
 		case packet_result_type::success:
 			cout << "Writing packet " << dec << num1 << endl;
 			break;
+		case packet_result_type::reader_waiting:
+			cout << "Reader waiting for " << num1 << " iterations.\n";
+			break;
 	}
 }

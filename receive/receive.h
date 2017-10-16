@@ -25,7 +25,8 @@ enum class packet_result_type {
 	invalid_uid,
 	older_packet,
 	full_buffer,
-	success
+	success,
+	reader_waiting
 };
 
 struct packet_result_t {
