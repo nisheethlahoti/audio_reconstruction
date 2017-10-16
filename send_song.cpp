@@ -18,10 +18,7 @@
 using namespace std;
 using namespace chrono;
 
-size_t const packet_samples = 240;
-uint16_t const sample_rate = 480; // samples per 10 milliseconds
 uint16_t const redundancy = 4;
-
 uint32_t packet_num = 1;
 
 uint8_t u8aRadiotapHeader[] = {
@@ -185,7 +182,7 @@ int main(int argc, char **argv) {
         pcap_perror(ppcap, "Failed to inject song packet");
     }
 
-    time += chrono::microseconds(packet_samples * 10000 / sample_rate);
+    time += chrono::microseconds(packet_samples * 1000000ULL / samples_per_s);
     while (chrono::steady_clock::now() < time);
   }
   pcap_close(ppcap);
