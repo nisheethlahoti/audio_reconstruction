@@ -115,12 +115,9 @@ struct wav_song {
     reader.close();
   }
 
-  uint16_t left(int const x) const {
-    return (chunk.data[4*x] | (uint16_t)chunk.data[4*x+1]<<8U) ^ 1U<<15U; // Flipping highest bit to convert signed int to unsigned.
-  }
-
-  uint16_t right(int const x) const {
-    return (chunk.data[4*x+2] | (uint16_t)chunk.data[4*x+3]<<8U) ^ 1U<<15U; // Flipping highest bit to convert signed int to unsigned.
+  // Assuming 16 bit stereo file. Also assuming num_channels <= 2
+  int16_t value(int const pos, int const channel) const {
+    return (chunk.data[4*pos+2*channel] | (uint16_t)chunk.data[4*pos+2*channel+1]<<8U);
   }
 } song("filename.wav");
 
@@ -131,22 +128,27 @@ void copy_and_shift(iterator begin, iterator end, uint8_t* &loc) {
   loc += end-begin;
 }
 
+int32_t shift(int32_t ret, int amount) {
+	return amount > 0 ? (ret << amount) : (ret >> (-amount));
+}
+
 size_t song_pos = 0;
 uint8_t* fill_packet(uint8_t *pos){
   for (int i=0; i<4; ++i)
     *pos++ = (packet_num>>(8*i)) & 0xff;
 
   for (int i=0; i<packet_samples; ++i) {
-    uint32_t left = song.left(song_pos),  right = song.right(song_pos); // 24 bit stereo
-    song_pos++;
-    for (int j=0; j<3; ++j) {
-		pos[6*i + j] = (left>>(8*j)) & 0xff;
-		pos[6*i+3+j] = (right>>(8*j)) & 0xff;
+	for (int t=0; t<num_channels; ++t) {
+		int32_t val = shift(song.value(song_pos, t), (8*byte_depth-16)); // Converting 16 bit to required size.
+		for (int j=0; j<byte_depth; ++j) {
+			pos[byte_depth*num_channels*i + t*byte_depth + j] = (val>>(8*j)) & 0xff;
+		}
 	}
+    song_pos++;
   }
   ++packet_num;
 
-  return 6*packet_samples + pos;
+  return byte_depth*num_channels*packet_samples + pos;
 }
 
 int main(int argc, char **argv) {
@@ -182,7 +184,7 @@ int main(int argc, char **argv) {
 
   auto time = chrono::steady_clock::now();
 
-  for (int iter = 0; song_pos + packet_samples < song.chunk.size/2; ++iter){
+  for (int iter = 0; song_pos + packet_samples < song.chunk.size/4; ++iter){ // Because input file is 16 bit stereo
     if (iter % 1000 == 0)
       cout << "Sending next thousand packets" << endl;
 

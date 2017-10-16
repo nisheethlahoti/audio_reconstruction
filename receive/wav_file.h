@@ -2,8 +2,6 @@
 #include <vector>
 #include "receive.h"
 
-typedef sample_t wav_sample_t;
-
 struct wav_header_t {
 	uint16_t audio_format = 1;
 	uint16_t num_ch;
@@ -21,6 +19,6 @@ struct wav_header_t {
 
 struct wav_t {
 	wav_header_t const header;
-	std::vector<wav_sample_t> samples;
+	std::vector<sample_t> samples;
 	void write_to_file(char const *filename);
 };

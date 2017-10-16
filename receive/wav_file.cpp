@@ -22,7 +22,7 @@ void wav_t::write_to_file(char const *filename) {
 
 	outfile << "data";
 	binary_write<uint32_t>(outfile, data_size);
-	for (wav_sample_t const &sample: samples)
+	for (sample_t const &sample: samples)
 		binary_write(outfile, sample);
 
 	outfile.close();

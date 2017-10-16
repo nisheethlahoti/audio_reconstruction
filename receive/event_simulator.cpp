@@ -13,8 +13,6 @@ wav_t wav;
 
 uint64_t increment_micros_100 = 100000000ULL / samples_per_s;
 void send_sample(sample_t sample) {
-	sample.left_high ^= 1U<<7;
-	sample.right_high ^= 1U<<15;
 	wav.samples.push_back(sample);
 }
 
