@@ -24,9 +24,16 @@ enum class packet_result_type {
 	invalid_crc,
 	invalid_uid,
 	older_packet,
+	last_packet,
 	full_buffer,
 	success,
-	reader_waiting
+	reader_waiting,
+	packet_recovered_and_written,
+	packet_recovered_but_dropped,
+	packet_not_recovered,
+	majority_not_found,
+	not_enough_packets,
+	hard_throwaway
 };
 
 struct packet_result_t {
