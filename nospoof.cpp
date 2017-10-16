@@ -27,7 +27,7 @@ using namespace chrono;
 
 size_t const num_samples = 18;
 
-static const uint8_t u8aRadiotapHeader[] = {
+static uint8_t u8aRadiotapHeader[] = {
 
   0x00, 0x00, // <-- radiotap version (ignore this)
   0x18, 0x00, // <-- number of bytes in our header (count the number of "0x"s)
@@ -53,7 +53,7 @@ static const uint8_t u8aRadiotapHeader[] = {
    */
   0x10,   // yes, there should be FCS at the end of the mac frame and it should be added by the card.
 
-  0x18, // 0x0c <-- rate
+  0x16, // 0x0c <-- rate
   //0x00,0x00,0x00,0x00, //0x8c, 0x14, 0x40, 0x01, // <-- channel
   0x6c, 0x09, 0xA0, 0x00,  
 
@@ -114,6 +114,9 @@ int main(int argc, char **argv) {
     cerr << "Not enough arguments\n";
     return 0;
   }
+
+  if (argc > 2)
+	u8aRadiotapHeader[17] = atoi(argv[2]); // = twice the intended data rate.
 
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];

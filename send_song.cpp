@@ -24,7 +24,7 @@ uint16_t const redundancy = 4;
 
 uint32_t packet_num = 1;
 
-const uint8_t u8aRadiotapHeader[] = {
+uint8_t u8aRadiotapHeader[] = {
   0x00, 0x00, // <-- radiotap version (ignore this)
   0x18, 0x00, // <-- number of bytes in our header (count the number of "0x"s)
 
@@ -151,6 +151,9 @@ int main(int argc, char **argv) {
     cerr << "Not enough arguments\n";
     return 0;
   }
+
+  if (argc > 2)
+	u8aRadiotapHeader[17] = atoi(argv[2]); // = twice the intended data rate.
 
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];
