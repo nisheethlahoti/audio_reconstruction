@@ -18,7 +18,6 @@
 using namespace std;
 using namespace chrono;
 
-uint16_t const redundancy = 4;
 uint32_t packet_num = 1;
 
 uint8_t u8aRadiotapHeader[] = {
@@ -116,8 +115,12 @@ struct wav_song {
     reader.close();
   }
 
-  uint16_t operator[] (int const x) const {
+  uint16_t left(int const x) const {
     return (chunk.data[4*x] | (uint16_t)chunk.data[4*x+1]<<8U) ^ 1U<<15U; // Flipping highest bit to convert signed int to unsigned.
+  }
+
+  uint16_t right(int const x) const {
+    return (chunk.data[4*x+2] | (uint16_t)chunk.data[4*x+3]<<8U) ^ 1U<<15U; // Flipping highest bit to convert signed int to unsigned.
   }
 } song("filename.wav");
 
@@ -134,13 +137,16 @@ uint8_t* fill_packet(uint8_t *pos){
     *pos++ = (packet_num>>(8*i)) & 0xff;
 
   for (int i=0; i<packet_samples; ++i) {
-    uint16_t val = song[song_pos++]; // 16 bit mono
-    pos[2*i] = val & 0xff; // little endian
-    pos[2*i+1] = (val>>8) & 0xff;
+    uint32_t left = song.left(song_pos),  right = song.right(song_pos); // 24 bit stereo
+    song_pos++;
+    for (int j=0; j<3; ++j) {
+		pos[6*i + j] = (left>>(8*j)) & 0xff;
+		pos[6*i+3+j] = (right>>(8*j)) & 0xff;
+	}
   }
   ++packet_num;
 
-  return 2*packet_samples + pos;
+  return 6*packet_samples + pos;
 }
 
 int main(int argc, char **argv) {
@@ -151,6 +157,10 @@ int main(int argc, char **argv) {
 
   if (argc > 2)
 	u8aRadiotapHeader[17] = atoi(argv[2]); // = twice the intended data rate.
+
+  int redundancy = 4;
+  if (argc > 3)
+	redundancy = atoi(argv[3]);
 
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];

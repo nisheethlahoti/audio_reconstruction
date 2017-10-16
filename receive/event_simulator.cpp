@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -12,10 +13,17 @@ wav_t wav;
 
 uint64_t increment_micros_100 = 100000000ULL / samples_per_s;
 void send_sample(sample_t sample) {
-	wav.samples.push_back(sample.val ^ 1U<<15);
+	sample.left_high ^= 1U<<7;
+	sample.right_high ^= 1U<<15;
+	wav.samples.push_back(sample);
 }
 
 int main(int argc, char* argv[]) {
+	{
+		sample_t sample;
+		assert(sizeof sample == byte_depth * num_channels);
+	}
+
 	pcap_file pcap_f(argv[1]);
 	uint64_t current_time = (pcap_f.packets[0].time()-100000)*100;
 

@@ -5,7 +5,7 @@
 #include "../magic_number.h"
 
 constexpr size_t useless_length = 32; // Length at beginning of packet that is useless. (Due to MAC header, right now.)
-constexpr size_t byte_depth = 2, num_channels = 1;
+constexpr size_t byte_depth = 3, num_channels = 2;
 
 constexpr size_t packet_size = byte_depth * num_channels * packet_samples
 	+ useless_length
@@ -13,7 +13,9 @@ constexpr size_t packet_size = byte_depth * num_channels * packet_samples
 	+ 4 /*FCS*/;
 
 struct sample_t { // The packet should directly be an array of sample_t type, after the headers. Define as uint8_t[] array, if need be.
-	uint16_t val;
+	uint16_t left_low;
+	uint8_t left_high, right_low;
+	uint16_t right_high;
 };
 
 enum class packet_result_type {

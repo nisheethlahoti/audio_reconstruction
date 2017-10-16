@@ -2,7 +2,7 @@
 #include <vector>
 #include "receive.h"
 
-typedef int16_t wav_sample_t;
+typedef sample_t wav_sample_t;
 
 struct wav_header_t {
 	uint16_t audio_format = 1;
