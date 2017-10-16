@@ -71,8 +71,8 @@ static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
 		return {packet_result_type::invalid_size, static_cast<uint32_t>(size)};
 	}
 
-	if (!equal(magic_number.begin(), magic_number.end(), packet)) {
-		return {packet_result_type::invalid_magic_number, get_little_endian(packet)};
+	if (!equal(magic_number.begin(), magic_number.end(), packet+useless_length)) {
+		return {packet_result_type::invalid_magic_number, get_little_endian(packet + useless_length)};
 	}
 
 	uint32_t expected_crc = crc32(packet, size-4), received_crc = get_little_endian(packet+size-4);
@@ -80,7 +80,7 @@ static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
 		return {packet_result_type::invalid_crc, received_crc, expected_crc};
 	}
 
-	packet += magic_number.size();
+	packet += useless_length + magic_number.size();
 
 	if (!equal(uid.begin(), uid.end(), packet)) {
 		return {packet_result_type::invalid_uid, get_little_endian(packet)};

@@ -58,6 +58,21 @@ uint8_t u8aRadiotapHeader[] = {
   0x08, 0x00,
 };
 
+array<uint8_t, 32> const mac_header = { 
+            /*0*/   0x08, 0x00, //Frame Control for data frame 
+            /*2*/   0x01, 0x01, //Duration
+            /*4*/   0x01, 0x00, 0x5e, 0x1c, 0x04, 0x5e,
+            /*10*/  0x6e, 0x40, 0x08, 0x49, 0x01, 0x64, //Source address - overwritten later
+            /*16*/  0x6e, 0x40, 0x08, 0x49, 0x01, 0x64, //BSSID - overwritten to the same as the source address
+            /*22*/  0x00, 0x00, //Seq-ctl
+            
+            //addr4 is not present if not WDS(bridge)                               
+            //IPLLC SNAP header : next 2 bytes, SNAP field : next 6 bytes
+            /*24*/  0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x08, 0x00,
+            //Frame body starts here. contains IP packet, UDP packet
+            /*32*/  
+};
+
 struct wav_chunk {
   std::string name;
   uint32_t size = 0;
@@ -157,6 +172,7 @@ int main(int argc, char **argv) {
   uint8_t *packet_loc = buf;
 
   copy_and_shift(u8aRadiotapHeader, u8aRadiotapHeader + sizeof u8aRadiotapHeader, packet_loc);
+  copy_and_shift(mac_header.begin(), mac_header.end(), packet_loc);
   copy_and_shift(magic_number.begin(), magic_number.end(), packet_loc);
   copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
