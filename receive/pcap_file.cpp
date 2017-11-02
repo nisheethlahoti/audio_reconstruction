@@ -22,5 +22,5 @@ pcap_file::~pcap_file() {
 }
 
 size_t pcap_packet_t::radiotap_length() {
-	return 25; // 25 is expected length of radiotap header (not guaranteed, might break things)
+	return data[2] | uint16_t(data[3])<<8;
 }
