@@ -7,11 +7,7 @@
 #include "receive.h"
 
 using namespace std;
-static constexpr size_t buf_packets = 6;
-
-static array<sample_t, packet_samples * buf_packets> circ_buf;
-static uint16_t volatile read_id = 0;
-static uint16_t write_id = 0;
+static constexpr size_t max_buf_size = 6;
 
 static uint32_t latest_packet_number = 0;
 
@@ -73,15 +69,12 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 static inline bool write_packet(uint8_t const *packet) {
-	if (read_id > write_id && read_id < write_id + packet_samples) {
+	if (buf_size >= max_buf_size) {
 		return false;
 	}
 
-	memcpy(circ_buf.data() + write_id, packet, packet_samples * sizeof circ_buf[0]);
-
-	write_id += packet_samples;
-	if (write_id == circ_buf.size())
-		write_id = 0;
+	buf_size++;
+	write_samples(packet, packet_samples);
 	return true;
 }
 
@@ -176,20 +169,5 @@ static inline packet_result_t receive_unlogged(uint8_t const *packet, size_t siz
 
 void receive_callback(uint8_t const *packet, size_t size) {
 	receive_unlogged(packet, size).log();
-}
-
-void timer_callback() {
-	static uint32_t reader_waiting_counter = 0;
-	uint16_t next_id = (read_id + 1)%circ_buf.size();
-	if (next_id != write_id) {
-		if (reader_waiting_counter > 0) {
-		packet_result_t({packet_result_type::reader_waiting, reader_waiting_counter}).log();
-			reader_waiting_counter = 0;
-		}
-		send_sample(circ_buf[read_id]);
-		read_id = next_id;
-	} else {
-		++reader_waiting_counter;
-	}
 }
 

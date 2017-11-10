@@ -1,6 +1,7 @@
 #ifndef SOUNDREX_RECEIVE_H
 #define SOUNDREX_RECEIVE_H
 
+#include <atomic>
 #include <cstdint>
 #include "../magic_number.h"
 
@@ -12,10 +13,7 @@ constexpr size_t packet_size = byte_depth * num_channels * packet_samples
 	+ 4 /*FCS*/;
 
 struct sample_t { // The packet should directly be an array of sample_t type, after the headers. Define as uint8_t[] array, if need be.
-	uint16_t left_low;
-	int8_t left_high;
-	uint8_t right_low;
-	int16_t right_high;
+	int16_t left, right;
 };
 
 enum class packet_result_type {
@@ -42,9 +40,9 @@ struct packet_result_t {
 	void log();
 };
 
+extern std::atomic<int> buf_size;
+
+void write_samples(void const *samples, size_t len);
 void receive_callback(uint8_t const packet[], size_t size);
-void timer_callback();
-void send_sample(sample_t sample);
 
 #endif /* SOUNDREX_RECEIVE_H */
-
