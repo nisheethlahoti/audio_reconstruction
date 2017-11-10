@@ -24,3 +24,4 @@ pcap_file::~pcap_file() {
 size_t pcap_packet_t::radiotap_length() {
 	return data[2] | uint16_t(data[3])<<8;
 }
+

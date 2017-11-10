@@ -27,3 +27,4 @@ void wav_t::write_to_file(char const *filename) {
 
 	outfile.close();
 }
+

@@ -22,3 +22,4 @@ struct wav_t {
 	std::vector<sample_t> samples;
 	void write_to_file(char const *filename);
 };
+
