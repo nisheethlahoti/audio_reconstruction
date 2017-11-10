@@ -64,7 +64,7 @@ static uint32_t crc32(const uint8_t *bytes, size_t bytes_sz) {
 	return ~crc;
 }
 
-static inline uint32_t get_little_endian(uint8_t *bytes) {
+static inline uint32_t get_little_endian(uint8_t const *bytes) {
 	uint32_t ret = 0;
 	for (int i=0; i<4; ++i) {
 		ret = ret | bytes[i] << (8*i);
@@ -72,7 +72,7 @@ static inline uint32_t get_little_endian(uint8_t *bytes) {
 	return ret;
 }
 
-static inline bool write_packet(uint8_t *packet) {
+static inline bool write_packet(uint8_t const *packet) {
 	if (read_id > write_id && read_id < write_id + packet_samples) {
 		return false;
 	}
@@ -111,8 +111,8 @@ static inline packet_result_type check_majority() { // TODO: Test if "more effic
 	}
 }
 
-static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
-	uint8_t *startpos = packet + useless_length;
+static inline packet_result_t receive_unlogged(uint8_t const *packet, size_t size) {
+	uint8_t const *startpos = packet + useless_length;
 	if (size != packet_size) {
 		return {packet_result_type::invalid_size, static_cast<uint32_t>(size)};
 	}
@@ -174,7 +174,7 @@ static inline packet_result_t receive_unlogged(uint8_t *packet, size_t size) {
 	}
 }
 
-void receive_callback(uint8_t *packet, size_t size) {
+void receive_callback(uint8_t const *packet, size_t size) {
 	receive_unlogged(packet, size).log();
 }
 

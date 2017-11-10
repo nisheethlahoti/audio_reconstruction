@@ -42,7 +42,7 @@ struct packet_result_t {
 	void log();
 };
 
-void receive_callback(uint8_t packet[], size_t size);
+void receive_callback(uint8_t const packet[], size_t size);
 void timer_callback();
 void send_sample(sample_t sample);
 
