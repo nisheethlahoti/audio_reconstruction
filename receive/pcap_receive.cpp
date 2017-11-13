@@ -21,6 +21,7 @@ void my_callback(u_char *trash, pcap_pkthdr const *pkthdr, u_char const *packet)
 }
 
 int main(int argc, char **argv) {
+  ios::sync_with_stdio(false);
   //assert(sizeof dac_sample == byte_depth * num_channels);
 
   if (argc < 2) {
