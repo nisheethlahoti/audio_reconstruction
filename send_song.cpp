@@ -13,9 +13,7 @@
 
 #include <pcap.h>
 #include <unistd.h>
-
 #include "magic_number.h"
-#include "crc.h"
 
 using namespace std;
 using namespace chrono;
@@ -182,7 +180,6 @@ int main(int argc, char **argv) {
   uint8_t *packet_loc = buf;
 
   copy_and_shift(u8aRadiotapHeader, u8aRadiotapHeader + sizeof u8aRadiotapHeader, packet_loc);
-  uint8_t const * const pstart = packet_loc;
   copy_and_shift(mac_header.begin(), mac_header.end(), packet_loc);
   copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
@@ -199,11 +196,6 @@ int main(int argc, char **argv) {
       cout << "Sending next thousand packets" << endl;
 
     uint8_t* endptr = fill_packet(packet_loc);
-	uint32_t crc = crc32(pstart, endptr - pstart);
-	for (int i=0; i<4; ++i) {
-		*endptr++ = crc >> (8*i) & 0xffU;
-	}
-
     for (int i=0; i<redundancy; ++i) {
       if(pcap_sendpacket(ppcap, buf, endptr - buf + 4) != 0)
         pcap_perror(ppcap, "Failed to inject song packet");
@@ -215,4 +207,3 @@ int main(int argc, char **argv) {
   pcap_close(ppcap);
   return 0;
 }
-
