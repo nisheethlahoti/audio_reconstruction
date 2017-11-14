@@ -23,7 +23,7 @@ void thread_fn(chrono::time_point<chrono::steady_clock> time) {
 
 void write_samples(void const *samples, size_t len) {
 	snd_pcm_sframes_t frames = snd_pcm_writei(handle, samples, len);
-	binout.write(static_cast<char const*>(samples), len*4);
+	binout.write(static_cast<char const*>(samples), len * byte_depth * num_channels);
 
 	if (frames < 0)
 		frames = snd_pcm_recover(handle, frames, 0);
@@ -35,6 +35,21 @@ void write_samples(void const *samples, size_t len) {
 	}
 }
 
+constexpr snd_pcm_format_t pcm_format() {
+	switch (byte_depth) {
+		case 1:
+			return SND_PCM_FORMAT_S8;
+		case 2:
+			return SND_PCM_FORMAT_S16_LE;
+		case 3:
+			return SND_PCM_FORMAT_S24_LE;
+		case 4:
+			return SND_PCM_FORMAT_S32_LE;
+		default:
+			return SND_PCM_FORMAT_UNKNOWN;
+	}
+}
+
 void init_pcm() {
 	int err;
 	if ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
@@ -43,12 +58,12 @@ void init_pcm() {
 	}
 
 	if ((err = snd_pcm_set_params(handle,
-		                      SND_PCM_FORMAT_S16_LE, // Assuming byte_depth == 2
+		                      pcm_format(),
 		                      SND_PCM_ACCESS_RW_INTERLEAVED,
 		                      num_channels,
 		                      samples_per_s,
 		                      1,
-		                      20000)) < 0) {   /* 20ms */
+		                      2 * duration.count())) < 0) {   /* 2 packets */
 		cerr << "Parameter setting error: " << snd_strerror(err) << endl;
 		exit(1);
 	}
