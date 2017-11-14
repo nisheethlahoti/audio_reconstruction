@@ -1,5 +1,5 @@
 CC=g++
-CXXFLAGS=-std=c++1z -O2
+CXXFLAGS=-std=gnu++1z -O2
 LDLIBS=-lpcap
 
 send_song:send_song.o

@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "receive.h"
+#include "logger.h"
 
 using namespace std;
 static constexpr size_t max_buf_size = 3;
@@ -72,15 +73,17 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 
 static inline bool write_packet(uint8_t const *packet) {
 	if (buf_size >= max_buf_size) {
+		log(full_buffer_log(latest_packet_number));
 		return false;
+	} else {
+		buf_size++;
+		write_samples(packet, packet_samples);
+		log(success_log(latest_packet_number));
+		return true;
 	}
-
-	buf_size++;
-	write_samples(packet, packet_samples);
-	return true;
 }
 
-static inline packet_result_type check_majority() { // TODO: Test if "more efficient" algorithm is indeed more efficient, and if so, implement.
+static inline void check_majority() { // TODO: Test if "more efficient" algorithm is indeed more efficient, and if so, implement.
 	for (int i=0; i<packet_versions[0].size(); ++i) {
 		int match = 0, j;
 		for (j=0; j<num_versions-1 && match < num_versions/2; ++j) {
@@ -91,60 +94,69 @@ static inline packet_result_type check_majority() { // TODO: Test if "more effic
 		}
 		if (match == num_versions/2)
 			packet_versions[0][i] = packet_versions[j][i];
-		else
-			return packet_result_type::majority_not_found;
+		else {
+			log(majority_not_found_log(latest_packet_number, num_versions));
+			return;
+		}
 	}
 
 	uint8_t *packet = packet_versions[0].data();
 	uint32_t expected_crc = crc32(packet, packet_size-4), received_crc = get_little_endian(packet+packet_size-4);
 	if (expected_crc == received_crc) {
-		return write_packet(packet + useless_length + 12)
-			? packet_result_type::packet_recovered_and_written
-			: packet_result_type::packet_recovered_but_dropped;
+		log(packet_recovered_log(latest_packet_number, num_versions));
+		write_packet(packet + useless_length + 12);
 	} else {
-		return packet_result_type::packet_not_recovered;
+		log(packet_not_recovered_log(latest_packet_number, num_versions));
 	}
 }
 
-static inline packet_result_t receive_unlogged(uint8_t const *packet, size_t size) {
+void receive_callback(uint8_t const *packet, size_t size) {
+	lock_guard<mutex> lock(mut);
+
 	uint8_t const *startpos = packet + useless_length;
 	if (size != packet_size) {
-		return {packet_result_type::invalid_size, static_cast<uint32_t>(size)};
+		log(invalid_size_log(static_cast<uint16_t>(size)));
+		return;
 	}
 
 	array<uint8_t, 4> xor_val = magic_number;
 	for (int i=0; i<4; ++i) {
 		xor_val[i] ^= startpos[i] ^ startpos[i+4] ^ startpos[i+8];
 	}
+
 	if (xor_val != array<uint8_t, 4>()) {
-		return {packet_result_type::invalid_magic_number, get_little_endian(startpos)};
+		log(invalid_magic_number_log(get_little_endian(startpos)));
+		return;
 	}
 
 	if (!equal(uid.begin(), uid.end(), startpos)) {
-		return {packet_result_type::invalid_uid, get_little_endian(startpos)};
+		log(invalid_uid_log(get_little_endian(startpos)));
+		return;
 	}
 
 	uint32_t packet_number = get_little_endian(uid.size() + startpos);
 	if (packet_number < latest_packet_number) {
-		return {packet_result_type::older_packet, packet_number, latest_packet_number};
+		log(older_packet_log(latest_packet_number, packet_number));
+		return;
 	}
 
 	if (packet_number == latest_packet_number && validated) {
-		return {packet_result_type::last_packet, packet_number};
+		log(repeated_packet_log(packet_number));
+		return;
 	}
 
 	if (packet_number > latest_packet_number) {
 		if (!written) {
 			if (validated) {
 				if (write_packet(packet_versions[0].data() + useless_length + 12)) { // Skipping ahead of packet_number and the XOR
-					packet_result_t({packet_result_type::success, latest_packet_number}).log();
+					log(success_log(latest_packet_number));
 				} else {
-					packet_result_t({packet_result_type::hard_throwaway, latest_packet_number}).log();
+					log(hard_throwaway_log(latest_packet_number));
 				}
 			} else if (num_versions > 2) {
-				packet_result_t({check_majority(), latest_packet_number, num_versions}).log();
+				check_majority();
 			} else {
-				packet_result_t({packet_result_type::not_enough_packets, latest_packet_number, num_versions}).log();
+				log(not_enough_packets_log(latest_packet_number, num_versions));
 			}
 		}
 		latest_packet_number = packet_number;
@@ -156,21 +168,15 @@ static inline packet_result_t receive_unlogged(uint8_t const *packet, size_t siz
 	uint32_t expected_crc = crc32(packet, size-4), received_crc = get_little_endian(packet+size-4);
 	if (expected_crc != received_crc) {
 		copy(packet, packet + size, packet_versions[num_versions++].data());
-		return {packet_result_type::invalid_crc, received_crc, expected_crc};
+		log(invalid_crc_log(expected_crc,received_crc));
+		return;
 	}
 
 	validated = true;
 	if (write_packet(startpos + 12)) { // Skipping ahead of packet_number and the XOR
 		written = true;
-		return {packet_result_type::success, packet_number};
 	} else {
 		copy(packet, packet + size, packet_versions[0].data());
-		return {packet_result_type::full_buffer, packet_number}; // TODO: Just dump into the packet_versions array, to be checked on arrival of next packet.
 	}
-}
-
-void receive_callback(uint8_t const *packet, size_t size) {
-	lock_guard<mutex> lock(mut);
-	receive_unlogged(packet, size).log();
 }
 

@@ -2,7 +2,7 @@ SRCS=$(wildcard *.cpp)
 OBJS=$(SRCS:.cpp=.o)
 
 CC=g++
-CXXFLAGS=-std=c++1z -Ofast -flto
+CXXFLAGS=-std=gnu++1z -Ofast -flto
 LDLIBS=-lpcap -lasound
 LDFLAGS=-pthread $(CXXFLAGS)
 

@@ -16,30 +16,6 @@ struct sample_t { // The packet should directly be an array of sample_t type, af
 	int16_t left, right;
 };
 
-enum class packet_result_type {
-	invalid_size,
-	invalid_magic_number,
-	invalid_crc,
-	invalid_uid,
-	older_packet,
-	last_packet,
-	full_buffer,
-	success,
-	reader_waiting,
-	packet_recovered_and_written,
-	packet_recovered_but_dropped,
-	packet_not_recovered,
-	majority_not_found,
-	not_enough_packets,
-	hard_throwaway
-};
-
-struct packet_result_t {
-	packet_result_type type;
-	uint32_t num1, num2; // Any numbers to be given as additional data
-	void log();
-};
-
 extern std::atomic<int> buf_size;
 
 void write_samples(void const *samples, size_t len);

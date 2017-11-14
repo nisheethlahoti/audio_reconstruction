@@ -1,7 +1,8 @@
 #include <iostream>
-#include "alsa.h"
-
 #include <fstream>
+
+#include "alsa.h"
+#include "logger.h"
 
 using namespace std;
 
@@ -13,10 +14,10 @@ void thread_fn(chrono::time_point<chrono::steady_clock> time) {
 	while (true) {
 		this_thread::sleep_until(time += duration);
 		if (buf_size > 0) {
-			cout << "Playing\n";
+			log(playing_log());
 			buf_size--;
 		} else {
-			packet_result_t({packet_result_type::reader_waiting}).log();
+			log(reader_waiting_log());
 		}
 	}
 }
