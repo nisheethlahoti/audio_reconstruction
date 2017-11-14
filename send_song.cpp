@@ -155,26 +155,29 @@ uint8_t* fill_packet(uint8_t *pos){
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 3) {
     cerr << "Not enough arguments\n";
     return 1;
   }
 
-  if (argc > 2)
-	u8aRadiotapHeader[17] = atoi(argv[2]); // = twice the intended data rate.
+  if (argc > 3)
+	u8aRadiotapHeader[17] = atoi(argv[3]); // = twice the intended data rate.
 
   int redundancy = max_redundancy;
-  if (argc > 3) {
-    redundancy = atoi(argv[3]);
+  if (argc > 4) {
+    redundancy = atoi(argv[4]);
     if (redundancy > max_redundancy) {
       cerr << "Given redundancy exceeeds the maximum redundancy allowed.\n";
       return 1;
     }
   }
 
+  if (argc > 5) {
+	  packet_num = atoi(argv[5]);
+  }
+
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];
-  pcap_t *ppcap;
 
   uint8_t buf[2000];
   uint8_t *packet_loc = buf;
@@ -183,7 +186,9 @@ int main(int argc, char **argv) {
   copy_and_shift(mac_header.begin(), mac_header.end(), packet_loc);
   copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
-  ppcap = pcap_open_live(argv[1], 800, 1, 20, errbuf);
+  pcap_t *ppcap = pcap_open_live(argv[1], 800, 1, 20, errbuf);
+  pcap_t *ppcap2 = pcap_open_live(argv[2], 800, 1, 20, errbuf);
+
   if (ppcap == NULL) {
     cerr << "Could not open interface wlan1 for packet injection: " << errbuf;
     return 2;
@@ -199,6 +204,8 @@ int main(int argc, char **argv) {
     for (int i=0; i<redundancy; ++i) {
       if(pcap_sendpacket(ppcap, buf, endptr - buf + 4) != 0)
         pcap_perror(ppcap, "Failed to inject song packet");
+      if(pcap_sendpacket(ppcap2, buf, endptr - buf + 4) != 0)
+        pcap_perror(ppcap2, "Failed to inject song packet");
     }
 
     time += chrono::microseconds(packet_samples * 1000000ULL / samples_per_s);

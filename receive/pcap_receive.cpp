@@ -24,20 +24,20 @@ int main(int argc, char **argv) {
   ios::sync_with_stdio(false);
   //assert(sizeof dac_sample == byte_depth * num_channels);
 
-  if (argc < 2) {
+  if (argc < 3) {
     printf("Not enough arguments\n");
     return 0;
   }
 
   /* PCAP vars */
   char errbuf[PCAP_ERRBUF_SIZE];
-  pcap_t *ppcap;
 
   /**
    * Finally, we have the packet and are ready to inject it.
    * First, we open the interface we want to inject on using pcap.
    */
-  ppcap = pcap_open_live(argv[1], 2048, 1, -1, errbuf);
+  pcap_t *ppcap = pcap_open_live(argv[1], 2048, 1, -1, errbuf);
+  pcap_t *ppcap2 = pcap_open_live(argv[2], 2048, 1, -1, errbuf);
 
   if (ppcap == NULL) {
     printf("Could not open interface wlan1 for packet injection: %s", errbuf);
@@ -45,7 +45,8 @@ int main(int argc, char **argv) {
   }
 
   init_pcm();
-  pcap_loop(ppcap, -1, my_callback, NULL);
+  thread t(pcap_loop, ppcap2, -1, my_callback, nullptr);
+  pcap_loop(ppcap, -1, my_callback, nullptr);
   return 0;
 }
 

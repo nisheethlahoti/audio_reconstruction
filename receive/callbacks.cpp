@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 
 #include "receive.h"
 
@@ -10,6 +11,7 @@ using namespace std;
 static constexpr size_t max_buf_size = 6;
 
 static uint32_t latest_packet_number = 0;
+static mutex mut;
 
 typedef array<uint8_t, packet_size> packet_t;
 
@@ -168,6 +170,7 @@ static inline packet_result_t receive_unlogged(uint8_t const *packet, size_t siz
 }
 
 void receive_callback(uint8_t const *packet, size_t size) {
+	lock_guard<mutex> lock(mut);
 	receive_unlogged(packet, size).log();
 }
 
