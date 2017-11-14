@@ -6,4 +6,3 @@ send_song:send_song.o
 
 clean:
 	rm -f send_song send_song.o
-

@@ -10,4 +10,3 @@ char const device[] = "default";			/* playback device */
 
 extern snd_pcm_t *handle;
 void init_pcm();
-

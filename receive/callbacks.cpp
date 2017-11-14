@@ -179,4 +179,3 @@ void receive_callback(uint8_t const *packet, size_t size) {
 		copy(packet, packet + size, packet_versions[0].data());
 	}
 }
-

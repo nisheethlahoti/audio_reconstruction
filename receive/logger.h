@@ -51,4 +51,3 @@ void log(logtype const &log_m) {
 
 #include "loglist.h"
 #endif
-

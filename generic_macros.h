@@ -30,4 +30,3 @@
 #define CDR(X, ...) __VA_ARGS__
 
 #endif // SOUNDREX_GENERIC_MACROS
-

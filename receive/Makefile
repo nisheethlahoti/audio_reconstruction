@@ -10,4 +10,3 @@ callbacks: $(OBJS)
 
 clean:
 	rm -f callbacks *.o
-

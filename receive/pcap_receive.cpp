@@ -49,4 +49,3 @@ int main(int argc, char **argv) {
   pcap_loop(ppcap, -1, my_callback, nullptr);
   return 0;
 }
-
