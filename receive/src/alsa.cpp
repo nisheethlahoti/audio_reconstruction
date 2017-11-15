@@ -25,14 +25,14 @@ void write_samples(void const *samples, size_t len) {
 	snd_pcm_sframes_t frames = snd_pcm_writei(handle, samples, len);
 	binout.write(static_cast<char const*>(samples), len * byte_depth * num_channels);
 
-	if (frames < 0)
-		frames = snd_pcm_recover(handle, frames, 0);
-
 	if (frames < 0) {
-		printf("snd_pcm_writei failed: %s\n", snd_strerror(frames));
+		cerr << "snd_pcm_writei failed: " << snd_strerror(frames) << endl;
 	} else if (frames < len) {
-		printf("Short write (expected %li, wrote %li)\n", len, frames);
+		cerr << "Short write (expected " << len << ", wrote " << frames << ')' << endl;
 	}
+
+	if (frames < 0)
+		cerr << (snd_pcm_recover(handle, frames, 0) ? "Recovered" : "Could not recover") << endl;
 }
 
 constexpr snd_pcm_format_t pcm_format() {

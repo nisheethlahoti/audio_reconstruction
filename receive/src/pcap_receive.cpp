@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   //assert(sizeof dac_sample == byte_depth * num_channels);
 
   if (argc < 3) {
-    printf("Not enough arguments\n");
+    cerr << "Not enough arguments" << endl;
     return 0;
   }
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   pcap_t *ppcap2 = pcap_open_live(argv[2], 2048, 1, -1, errbuf);
 
   if (ppcap == NULL) {
-    printf("Could not open interface wlan1 for packet injection: %s", errbuf);
+    cerr << "Could not open interface wlan1 for packet injection: " << errbuf << endl;
     return 2;
   }
 
