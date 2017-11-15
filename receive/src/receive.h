@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <fstream>
 
-#include "../magic_number.h"
+#include "../../magic_number.h"
 #include "logger.h"
 
 constexpr size_t useless_length = 32; // Length at beginning of packet that is useless. (Due to MAC header, right now.)

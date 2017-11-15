@@ -1,12 +1,22 @@
-SRCS=$(wildcard *.cpp)
-OBJS=$(SRCS:.cpp=.o)
+SRCS=$(wildcard src/*.cpp)
+OBJS=$(patsubst src/%.cpp, out/%.o, $(SRCS))
 
 CC=g++
 CXXFLAGS=-std=gnu++1z -Ofast -flto
 LDLIBS=-lpcap -lasound
 LDFLAGS=-pthread $(CXXFLAGS)
 
-callbacks: $(OBJS)
+all: init out/callbacks
+
+out/callbacks: $(OBJS)
+
+out/%.o: src/%.cpp
+	$(CC) $(CXXFLAGS) -c $< -o $@
+
+init:
+	mkdir -p out/
 
 clean:
-	rm -f callbacks *.o
+	rm -rf out/
+
+.PHONY: all init clean
