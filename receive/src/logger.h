@@ -10,13 +10,13 @@
 #include "../../generic_macros.h"
 
 template <class tuple_t, size_t... sizes, class func_t>
-void for_each_impl(tuple_t tup, std::index_sequence<sizes...> sz, func_t&& func) {
+void for_each_impl(tuple_t&& tup, std::index_sequence<sizes...> sz, func_t&& func) {
 	(func(sizes, std::get<sizes>(tup)),...);
 }
 
-template <class... T, class func_t>
-void for_each(std::tuple<T...> tup, func_t&& func) {
-	for_each_impl(tup, std::make_index_sequence<sizeof...(T)>{}, func);
+template <class tuple_t, class func_t>
+void for_each(tuple_t&& tup, func_t&& func) {
+	for_each_impl(tup, std::make_index_sequence<std::tuple_size<decltype(std::tuple_cat(tup))>::value>{}, func);
 }
 
 template <class logtype>
@@ -48,7 +48,7 @@ void binary_log(std::ostream &out, logtype const &log_m) {
 	static constexpr char message[] = #NAME;\
 	static constexpr uint8_t id = ID;\
 	static constexpr std::array<char const*, NUMARGS(__VA_ARGS__)> arg_names = { MAP(STRINGCDR, __VA_ARGS__) };\
-	std::tuple<MAP(APPLYCAR,__VA_ARGS__)> const arg_vals;\
+	std::tuple<MAP(APPLYCAR,__VA_ARGS__)> arg_vals;\
 	CONCAT(NAME,_log)(MAP(APPLYWRITE, __VA_ARGS__)): arg_vals({MAP(APPLYCDR, __VA_ARGS__)}) {}\
 };
 
