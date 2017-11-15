@@ -2,7 +2,6 @@
 #include <fstream>
 
 #include "alsa.h"
-#include "logger.h"
 
 using namespace std;
 
@@ -64,7 +63,7 @@ void init_pcm() {
 		                      num_channels,
 		                      samples_per_s,
 		                      1,
-		                      2 * duration.count())) < 0) {   /* 2 packets */
+		                      (max_buf_size+1) * duration.count())) < 0) {
 		cerr << "Parameter setting error: " << snd_strerror(err) << endl;
 		exit(1);
 	}

@@ -9,17 +9,17 @@
 
 #include "../generic_macros.h"
 
-template<class tuple_t, size_t... sizes, class func_t>
+template <class tuple_t, size_t... sizes, class func_t>
 void for_each_impl(tuple_t tup, std::index_sequence<sizes...> sz, func_t&& func) {
 	(func(sizes, std::get<sizes>(tup)),...);
 }
 
-template<class... T, class func_t>
+template <class... T, class func_t>
 void for_each(std::tuple<T...> tup, func_t&& func) {
 	for_each_impl(tup, std::make_index_sequence<sizeof...(T)>{}, func);
 }
 
-template<class logtype>
+template <class logtype>
 void text_log(std::ostream &out, logtype const &log_m) {
 	out << log_m.message << ":: ";
 	for_each(log_m.arg_vals, [&out, &log_m] (int index, auto const &val) {
@@ -28,9 +28,12 @@ void text_log(std::ostream &out, logtype const &log_m) {
 	out << std::endl;
 }
 
-template<class logtype>
-void log(logtype const &log_m) {
-	text_log(std::cout, log_m);
+template <class logtype>
+void binary_log(std::ostream &out, logtype const &log_m) {
+	out.put(log_m.id);
+	for_each(log_m.arg_vals, [&out, &log_m] (int index, auto const &val) {
+		out.write(reinterpret_cast<char const*>(&val), sizeof(val));
+	});
 }
 
 #define APPLYCAR(X) CAR X

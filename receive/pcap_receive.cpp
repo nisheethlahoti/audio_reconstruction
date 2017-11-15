@@ -8,12 +8,14 @@
 #include <linux/ip.h>
 #include <linux/udp.h>
 #include <thread>
+#include <signal.h>
 #include <unistd.h>
 
 #include "receive.h"
 #include "alsa.h"
 
 using namespace std;
+ofstream logfile("log.bin");
 
 void my_callback(u_char *trash, pcap_pkthdr const *pkthdr, u_char const *packet) {
   size_t radiotap_len = packet[2] | size_t(packet[3])<<8;
@@ -21,6 +23,8 @@ void my_callback(u_char *trash, pcap_pkthdr const *pkthdr, u_char const *packet)
 }
 
 int main(int argc, char **argv) {
+  signal(SIGINT, exit);
+
   ios::sync_with_stdio(false);
   //assert(sizeof dac_sample == byte_depth * num_channels);
 

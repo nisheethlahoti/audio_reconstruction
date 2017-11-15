@@ -6,10 +6,8 @@
 #include <mutex>
 
 #include "receive.h"
-#include "logger.h"
 
 using namespace std;
-static constexpr size_t max_buf_size = 3;
 
 static uint32_t latest_packet_number = 0;
 static mutex mut;

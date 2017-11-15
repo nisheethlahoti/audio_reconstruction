@@ -3,9 +3,13 @@
 
 #include <atomic>
 #include <cstdint>
+#include <fstream>
+
 #include "../magic_number.h"
+#include "logger.h"
 
 constexpr size_t useless_length = 32; // Length at beginning of packet that is useless. (Due to MAC header, right now.)
+static constexpr size_t max_buf_size = 3;
 
 constexpr size_t packet_size = byte_depth * num_channels * packet_samples
 	+ useless_length
@@ -17,8 +21,14 @@ struct sample_t { // The packet should directly be an array of sample_t type, af
 };
 
 extern std::atomic<int> buf_size;
+extern std::ofstream logfile;
 
 void write_samples(void const *samples, size_t len);
 void receive_callback(uint8_t const packet[], size_t size);
+
+template <class logtype>
+void log(logtype const &log_m) {
+	binary_log(logfile, log_m);
+}
 
 #endif /* SOUNDREX_RECEIVE_H */
