@@ -168,13 +168,8 @@ void receive_callback(uint8_t const *packet, size_t size) {
 	if (packet_number > latest_packet_number) {
 		if (!written) {
 			if (validated) {
-				if (write_packet(
-				        packet_versions[0].data() + useless_length +
-				        12)) {  // Skipping ahead of packet_number and the XOR
-					log(success_log(latest_packet_number));
-				} else {
-					log(hard_throwaway_log(latest_packet_number));
-				}
+				log(deferred_writing_log());
+				write_packet(packet_versions[0].data() + useless_length + 12);
 			} else if (num_versions > 2) {
 				check_majority();
 			} else {
@@ -196,8 +191,8 @@ void receive_callback(uint8_t const *packet, size_t size) {
 	}
 
 	validated = true;
-	if (write_packet(startpos +
-	                 12)) {  // Skipping ahead of packet_number and the XOR
+	log(validated_log());
+	if (write_packet(startpos + 12)) {
 		written = true;
 	} else {
 		copy(packet, packet + size, packet_versions[0].data());
