@@ -41,12 +41,16 @@ int main(int argc, char **argv) {
 	 * Finally, we have the packet and are ready to inject it.
 	 * First, we open the interface we want to inject on using pcap.
 	 */
-	pcap_t *ppcap = pcap_open_live(argv[1], 2048, 1, -1, errbuf);
-	pcap_t *ppcap2 = pcap_open_live(argv[2], 2048, 1, -1, errbuf);
 
-	if (ppcap == NULL) {
-		cerr << "Could not open interface wlan1 for packet injection: "
-		     << errbuf << endl;
+	pcap_t *ppcap = pcap_open_live(argv[1], 2048, 1, -1, errbuf);
+	if (!ppcap) {
+		cerr << argv[1] << ": unable to open: " << errbuf << endl;
+		return 2;
+	}
+
+	pcap_t *ppcap2 = pcap_open_live(argv[2], 2048, 1, -1, errbuf);
+	if (!ppcap2) {
+		cerr << argv[2] << ": unable to open: " << errbuf << endl;
 		return 2;
 	}
 
