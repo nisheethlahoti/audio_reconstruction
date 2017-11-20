@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <chrono>
 #include <fstream>
 
 #include "../../magic_number.h"
@@ -20,11 +21,8 @@ constexpr size_t packet_size = byte_depth * num_channels * packet_samples +
                                uid.size() + 4 /*packet number*/
                                + 4 /*FCS*/;
 
-struct sample_t {
-	// The packet should directly be an array of sample_t type, after the
-	// headers. Define as uint8_t[] array, if need be.
-	int16_t left, right;
-};
+typedef std::array<uint8_t, byte_depth> mono_sample_t;
+typedef std::array<mono_sample_t, num_channels> sample_t;
 
 extern std::atomic<int> buf_size;
 extern std::ofstream logfile;

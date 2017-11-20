@@ -45,7 +45,7 @@ void initialize_receiver() {
 	}
 
 	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, "socket");
+	strcpy(server.sun_path, "/tmp/socket");
 
 	if (connect(sock, reinterpret_cast<sockaddr *>(&server), sizeof server)) {
 		close(sock);

@@ -10,20 +10,14 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
-#include "../../magic_number.h"
+#include "../src/receive.h"
 #include "wav_direct_write.h"
 
 using namespace std;
 
-struct sample_t {
-	array<uint8_t, 3> val;
-	sample_t(uint32_t to_write = 0) {
-		uint8_t *init = reinterpret_cast<uint8_t *>(&to_write);
-		copy(init, init + 3, val.data());
-	}
-} samples[1024];
+sample_t samples[1024];
 
-char const sockname[] = "socket";
+char const sockname[] = "/tmp/socket";
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
