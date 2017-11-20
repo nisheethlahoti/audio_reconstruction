@@ -8,15 +8,19 @@
 #include "../../magic_number.h"
 #include "logger.h"
 
-constexpr size_t useless_length = 32; // Length at beginning of packet that is useless. (Due to MAC header, right now.)
+// Length at beginning of packet that is  useless.
+// (Due to MAC header, right now.)
+constexpr size_t useless_length = 32;
 static constexpr size_t max_buf_size = 3;
 
-constexpr size_t packet_size = byte_depth * num_channels * packet_samples
-	+ useless_length
-	+ magic_number.size() + uid.size() + 4 /*packet number*/
-	+ 4 /*FCS*/;
+constexpr size_t packet_size = byte_depth * num_channels * packet_samples +
+                               useless_length + magic_number.size() +
+                               uid.size() + 4 /*packet number*/
+                               + 4 /*FCS*/;
 
-struct sample_t { // The packet should directly be an array of sample_t type, after the headers. Define as uint8_t[] array, if need be.
+struct sample_t {
+	// The packet should directly be an array of sample_t type, after the
+	// headers. Define as uint8_t[] array, if need be.
 	int16_t left, right;
 };
 
