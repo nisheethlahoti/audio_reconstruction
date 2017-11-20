@@ -11,7 +11,9 @@
 // Length at beginning of packet that is  useless.
 // (Due to MAC header, right now.)
 constexpr size_t useless_length = 32;
-static constexpr size_t max_buf_size = 3;
+constexpr size_t max_buf_size = 3;
+constexpr std::chrono::microseconds duration(packet_samples * 1000000ull /
+                                             samples_per_s);
 
 constexpr size_t packet_size = byte_depth * num_channels * packet_samples +
                                useless_length + magic_number.size() +
@@ -29,6 +31,7 @@ extern std::ofstream logfile;
 
 void write_samples(void const *samples, size_t len);
 void receive_callback(uint8_t const packet[], size_t size);
+void initialize_receiver();
 
 template <class logtype>
 void log(logtype const &log_m) {

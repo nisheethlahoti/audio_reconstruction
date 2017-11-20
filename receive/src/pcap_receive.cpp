@@ -11,7 +11,6 @@
 #include <iostream>
 #include <thread>
 
-#include "alsa.h"
 #include "receive.h"
 
 using namespace std;
@@ -54,7 +53,7 @@ int main(int argc, char **argv) {
 		return 2;
 	}
 
-	init_pcm();
+	initialize_receiver();
 	thread t(pcap_loop, ppcap2, -1, my_callback, nullptr);
 	pcap_loop(ppcap, -1, my_callback, nullptr);
 	return 0;

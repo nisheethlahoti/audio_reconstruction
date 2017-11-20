@@ -1,10 +1,15 @@
+#include <alsa/asoundlib.h>
+#include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
-#include "alsa.h"
+#include "receive.h"
 
 using namespace std;
 
+char const device[] = "default"; /* playback device */
 atomic<int> buf_size(0);
 snd_pcm_t *handle;
 
@@ -54,7 +59,7 @@ constexpr snd_pcm_format_t pcm_format() {
 	}
 }
 
-void init_pcm() {
+void initialize_receiver() {
 	int err;
 	if ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
 		cerr << "Playback open error: " << snd_strerror(err) << endl;
