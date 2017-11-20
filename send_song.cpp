@@ -190,11 +190,14 @@ int main(int argc, char **argv) {
 	copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
 	pcap_t *ppcap = pcap_open_live(argv[1], 800, 1, 20, errbuf);
-	pcap_t *ppcap2 = pcap_open_live(argv[2], 800, 1, 20, errbuf);
+	if (!ppcap) {
+		cerr << argv[1] << ": unable to open: " << errbuf << endl;
+		return 2;
+	}
 
-	if (ppcap == NULL) {
-		cerr << "Could not open interface wlan1 for packet injection: "
-		     << errbuf;
+	pcap_t *ppcap2 = pcap_open_live(argv[2], 800, 1, 20, errbuf);
+	if (!ppcap2) {
+		cerr << argv[2] << ": unable to open: " << errbuf << endl;
 		return 2;
 	}
 
