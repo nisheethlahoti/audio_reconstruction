@@ -53,7 +53,8 @@ int main(int argc, char **argv) {
 		return 2;
 	}
 
-	initialize_receiver();
+	initialize_player();
+	thread(playing_loop, chrono::steady_clock::now()).detach();
 	thread t(pcap_loop, ppcap2, -1, my_callback, nullptr);
 	pcap_loop(ppcap, -1, my_callback, nullptr);
 	return 0;

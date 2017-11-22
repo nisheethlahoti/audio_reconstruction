@@ -13,20 +13,7 @@
 
 using namespace std;
 
-atomic<int> buf_size(0);
-int sock;
-
-void thread_fn(chrono::time_point<chrono::steady_clock> time) {
-	while (true) {
-		this_thread::sleep_until(time += duration);
-		if (buf_size > 0) {
-			log(playing_log());
-			buf_size--;
-		} else {
-			log(reader_waiting_log());
-		}
-	}
-}
+static int sock;
 
 void write_samples(void const *samples, size_t len) {
 	if (write(sock, samples, len * sizeof sample_t()) < 0) {
@@ -35,7 +22,7 @@ void write_samples(void const *samples, size_t len) {
 	}
 }
 
-void initialize_receiver() {
+void initialize_player() {
 	sockaddr_un server;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -52,6 +39,4 @@ void initialize_receiver() {
 		perror("connecting stream socket");
 		exit(1);
 	}
-
-	thread(thread_fn, chrono::steady_clock::now()).detach();
 }

@@ -1,9 +1,8 @@
 #ifndef SOUNDREX_RECEIVE_H
 #define SOUNDREX_RECEIVE_H
 
-#include <atomic>
-#include <cstdint>
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 
 #include "../../magic_number.h"
@@ -24,12 +23,13 @@ constexpr size_t packet_size = byte_depth * num_channels * packet_samples +
 typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
 
-extern std::atomic<int> buf_size;
 extern std::ofstream logfile;
 
 void write_samples(void const *samples, size_t len);
 void receive_callback(uint8_t const packet[], size_t size);
-void initialize_receiver();
+
+void initialize_player();
+void playing_loop(std::chrono::time_point<std::chrono::steady_clock>);
 
 template <class logtype>
 void log(logtype const &log_m) {

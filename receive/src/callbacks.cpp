@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 #include "receive.h"
 
@@ -17,6 +19,7 @@ typedef array<uint8_t, packet_size> packet_t;
 static packet_t packet_versions[max_redundancy];
 static unsigned int num_versions = 0;
 static bool validated = true, written = true;
+static atomic<int> buf_size(0);
 
 static uint32_t const crctable[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -196,5 +199,17 @@ void receive_callback(uint8_t const *packet, size_t size) {
 		written = true;
 	} else {
 		copy(packet, packet + size, packet_versions[0].data());
+	}
+}
+
+void playing_loop(chrono::time_point<chrono::steady_clock> time) {
+	while (true) {
+		this_thread::sleep_until(time += duration);
+		if (buf_size > 0) {
+			log(playing_log());
+			buf_size--;
+		} else {
+			log(reader_waiting_log());
+		}
 	}
 }
