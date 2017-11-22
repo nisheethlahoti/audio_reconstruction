@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -16,7 +15,10 @@ static uint32_t latest_packet_number = 0;
 static packet_t packet_versions[max_redundancy];
 static unsigned int num_versions = 0;
 static bool validated = true, written = true;
-static atomic<int> buf_size(0);
+
+array<packet_t, max_buf_size + 1> packets;
+int pstart = 0, pend = 0;
+static mutex packet_mut;
 
 static uint32_t const crctable[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -89,12 +91,15 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 static inline bool write_packet(uint8_t const *packet) {
-	if (buf_size >= max_buf_size) {
+	packet_mut.lock();
+	if (pstart == pend + 1 || pstart == pend - max_buf_size) {
+		packet_mut.unlock();
 		log(full_buffer_log(latest_packet_number));
 		return false;
 	} else {
-		buf_size++;
-		write_samples(packet, packet_samples);
+		copy(packet, packet + packets[pend].size(), packets[pend].data());
+		pend = (pend + 1) % packets.size();
+		packet_mut.unlock();
 		log(success_log(latest_packet_number));
 		return true;
 	}
@@ -203,10 +208,14 @@ void receive_callback(uint8_t const *packet, size_t size) {
 void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 	while (true) {
 		this_thread::sleep_until(time += duration);
-		if (buf_size > 0) {
+		packet_mut.lock();
+		if (pstart != pend) {
+			write_samples(packets[pstart].data(), packet_samples);
+			pstart = (pstart + 1) % packets.size();
+			packet_mut.unlock();
 			log(playing_log());
-			buf_size--;
 		} else {
+			packet_mut.unlock();
 			log(reader_waiting_log());
 		}
 	}
