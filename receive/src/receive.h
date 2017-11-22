@@ -30,10 +30,11 @@ void receive_callback(uint8_t const packet[], size_t size);
 
 void initialize_player();
 void playing_loop(std::chrono::time_point<std::chrono::steady_clock>);
+uint32_t get_timediff();
 
 template <class logtype>
 void log(logtype const &log_m) {
-	binary_log(logfile, log_m);
+	binary_log(logfile, get_timediff(), log_m);
 }
 
 #endif /* SOUNDREX_RECEIVE_H */

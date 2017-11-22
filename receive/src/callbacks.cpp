@@ -10,12 +10,9 @@
 #include "receive.h"
 
 using namespace std;
-
-static uint32_t latest_packet_number = 0;
-static mutex mut;
-
 typedef array<uint8_t, packet_size> packet_t;
 
+static uint32_t latest_packet_number = 0;
 static packet_t packet_versions[max_redundancy];
 static unsigned int num_versions = 0;
 static bool validated = true, written = true;
@@ -134,6 +131,7 @@ static inline void check_majority() {
 }
 
 void receive_callback(uint8_t const *packet, size_t size) {
+	static mutex mut;
 	lock_guard<mutex> lock(mut);
 
 	uint8_t const *startpos = packet + useless_length;
@@ -212,4 +210,13 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 			log(reader_waiting_log());
 		}
 	}
+}
+
+uint32_t get_timediff() {
+	static mutex mut;
+	static auto tp = chrono::steady_clock::now();
+	auto prev = tp;
+	tp = chrono::steady_clock::now();
+	auto val = chrono::duration_cast<chrono::microseconds>(tp - prev).count();
+	return val >> 31 ? ~0 : val;
 }
