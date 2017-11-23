@@ -103,8 +103,7 @@ static inline bool write_packet(uint8_t const *packet, uint32_t const pnum) {
 		memcpy(b_end->samples.data(), packet, sizeof b_end->samples);
 		memcpy(b_end->trailing.data(), packet + sizeof b_end->samples,
 		       sizeof b_end->trailing);
-		if (++b_end == batches.end())
-			b_end = batches.begin();
+		b_end = b_end == batches.end() - 1 ? batches.begin() : b_end + 1;
 		batch_mut.unlock();
 		log(success_log(pnum));
 		return true;
@@ -246,7 +245,7 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 		this_thread::sleep_until(time += duration);
 		batch_mut.lock();
 		b_itr const b_next =
-		    b_start + 1 == batches.end() ? batches.begin() : b_start + 1;
+		    b_start == batches.end() - 1 ? batches.begin() : b_start + 1;
 		if (b_end != b_next) {
 			further_repeat = max_repeat;
 			mergewrite_samples(b_start, b_next);
@@ -261,6 +260,15 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 		} else {
 			batch_mut.unlock();
 			log(reader_waiting_log());
+			int bdiff = 0;
+			do {
+				this_thread::sleep_until(time += duration);
+				batch_mut.lock();
+				bdiff = b_end - b_next;
+				batch_mut.unlock();
+				if (bdiff < 0)
+					bdiff += batches.size();
+			} while (bdiff < batches.size() / 2);
 		}
 	}
 }
