@@ -15,19 +15,16 @@
 
 using namespace std;
 
-sample_t samples[1024];
+static sample_t samples[1024];
+static char const sockname[] = "/tmp/socket";
 
-char const sockname[] = "/tmp/socket";
+void play_samples(void const *samples, size_t len);
+void initialize(int num_ch, int byte_dp, uint32_t sample_rate, size_t batch_sz);
 
-int main(int argc, char **argv) {
-	if (argc < 3) {
-		cerr << "Usage: " << argv[0] << " <sample_batch_size> <output_file>\n";
-		return 1;
-	}
-
-	int const batch_num = atoi(argv[1]);
+int main() {
+	initialize(num_channels, byte_depth, samples_per_s, packet_samples);
 	wav_header_t header(num_channels, samples_per_s, byte_depth);
-	wav_writer_t<sample_t> outp(argv[2], header);
+	wav_writer_t<sample_t> outp("outp.wav", header);
 
 	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -50,16 +47,27 @@ int main(int argc, char **argv) {
 	}
 
 	int rval;
-	while ((rval = read(msgsock, samples, batch_num * sizeof samples[0])) > 0) {
-		for (int i = 0; i < rval / sizeof samples[0]; ++i)
+	while ((rval = read(msgsock, samples, packet_samples * sizeof samples[0])) >
+	       0) {
+		int const num_samples = rval / sizeof samples[0];
+		if (num_samples * sizeof samples[0] != rval)
+			break;
+		play_samples(samples, num_samples);
+		for (int i = 0; i < num_samples; ++i)
 			outp.add_sample(samples[i]);
 	}
-
-	if (rval < 0)
-		perror("reading stream message");
 
 	close(msgsock);
 	close(sock);
 	unlink(sockname);
-	return 0;
+
+	if (rval < 0) {
+		perror("reading stream message");
+		return 1;
+	} else if (rval % sizeof samples[0]) {
+		cerr << rval << " not divisible by " << sizeof samples[0] << endl;
+		return 2;
+	} else {
+		return 0;
+	}
 }
