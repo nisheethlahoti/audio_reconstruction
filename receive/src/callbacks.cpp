@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -19,8 +20,7 @@ static bool validated = true, written = true;
 array<batch_t, max_buf_size + 1> batches;
 typedef decltype(batches)::iterator b_itr;
 typedef decltype(batches)::const_iterator b_const_itr;
-static b_itr b_start = batches.begin(), b_end = batches.begin() + 1;
-static mutex batch_mut;
+static atomic<b_itr> b_begin(batches.begin()), b_end(batches.begin() + 1);
 
 static uint32_t const crctable[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -93,18 +93,17 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 static inline bool write_packet(uint8_t const *packet, uint32_t const pnum) {
-	batch_mut.lock();
-	if (b_start == b_end) {
-		batch_mut.unlock();
+	b_itr const finish = b_end.load(memory_order_relaxed);
+	if (b_begin.load(memory_order_consume) == finish) {
 		log(full_buffer_log(pnum));
 		return false;
 	} else {
-		b_end->num = pnum;
-		memcpy(b_end->samples.data(), packet, sizeof b_end->samples);
-		memcpy(b_end->trailing.data(), packet + sizeof b_end->samples,
-		       sizeof b_end->trailing);
-		b_end = b_end == batches.end() - 1 ? batches.begin() : b_end + 1;
-		batch_mut.unlock();
+		finish->num = pnum;
+		memcpy(finish->samples.data(), packet, sizeof finish->samples);
+		memcpy(finish->trailing.data(), packet + sizeof finish->samples,
+		       sizeof finish->trailing);
+		b_end.store(finish == batches.end() - 1 ? batches.begin() : finish + 1,
+		            memory_order_release);
 		log(success_log(pnum));
 		return true;
 	}
@@ -218,7 +217,8 @@ inline static int32_t get_int_sample(mono_sample_t const &smpl) {
 	return ret >> (8 * (4 - sizeof smpl));
 }
 
-inline void mergewrite_samples(b_const_itr first, b_const_itr second) {
+static void mergewrite_samples(b_const_itr const first,
+                               b_const_itr const second) {
 	if (second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
@@ -243,29 +243,24 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 	static int further_repeat = 0;
 	while (true) {
 		this_thread::sleep_until(time += duration);
-		batch_mut.lock();
-		b_itr const b_next =
-		    b_start == batches.end() - 1 ? batches.begin() : b_start + 1;
-		if (b_end != b_next) {
+		b_itr const start = b_begin.load(memory_order_relaxed);
+		b_itr const next =
+		    start == batches.end() - 1 ? batches.begin() : start + 1;
+		if (b_end.load(memory_order_consume) != next) {
 			further_repeat = max_repeat;
-			mergewrite_samples(b_start, b_next);
-			b_start = b_next;
-			batch_mut.unlock();
-			log(playing_log(b_start->num));
+			mergewrite_samples(start, next);
+			b_begin.store(next, memory_order_release);
+			log(playing_log(next->num));
 		} else if (further_repeat) {
 			--further_repeat;
-			mergewrite_samples(b_start, b_start);
-			batch_mut.unlock();
-			log(repeat_play_log(b_start->num));
+			mergewrite_samples(start, start);
+			log(repeat_play_log(start->num));
 		} else {
-			batch_mut.unlock();
 			log(reader_waiting_log());
 			int bdiff = 0;
 			do {
 				this_thread::sleep_until(time += duration);
-				batch_mut.lock();
-				bdiff = b_end - b_next;
-				batch_mut.unlock();
+				bdiff = b_end.load(memory_order_consume) - next;
 				if (bdiff < 0)
 					bdiff += batches.size();
 			} while (bdiff < batches.size() / 2);
