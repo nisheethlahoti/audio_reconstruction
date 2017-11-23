@@ -16,9 +16,11 @@ static packet_t packet_versions[max_redundancy];
 static unsigned int num_versions = 0;
 static bool validated = true, written = true;
 
-array<packet_t, max_buf_size + 1> packets;
-int pstart = 0, pend = 0;
-static mutex packet_mut;
+array<batch_t, max_buf_size + 1> batches;
+typedef decltype(batches)::iterator b_itr;
+typedef decltype(batches)::const_iterator b_const_itr;
+static b_itr b_start = batches.begin(), b_end = batches.begin() + 1;
+static mutex batch_mut;
 
 static uint32_t const crctable[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -90,17 +92,21 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 	return ret;
 }
 
-static inline bool write_packet(uint8_t const *packet) {
-	packet_mut.lock();
-	if (pstart == pend + 1 || pstart == pend - max_buf_size) {
-		packet_mut.unlock();
-		log(full_buffer_log(latest_packet_number));
+static inline bool write_packet(uint8_t const *packet, uint32_t const pnum) {
+	batch_mut.lock();
+	if (b_start == b_end) {
+		batch_mut.unlock();
+		log(full_buffer_log(pnum));
 		return false;
 	} else {
-		copy(packet, packet + packets[pend].size(), packets[pend].data());
-		pend = (pend + 1) % packets.size();
-		packet_mut.unlock();
-		log(success_log(latest_packet_number));
+		b_end->num = pnum;
+		memcpy(b_end->samples.data(), packet, sizeof b_end->samples);
+		memcpy(b_end->trailing.data(), packet + sizeof b_end->samples,
+		       sizeof b_end->trailing);
+		if (++b_end == batches.end())
+			b_end = batches.begin();
+		batch_mut.unlock();
+		log(success_log(pnum));
 		return true;
 	}
 }
@@ -129,7 +135,7 @@ static inline void check_majority() {
 	         received_crc = get_little_endian(packet + packet_size - 4);
 	if (expected_crc == received_crc) {
 		log(packet_recovered_log(latest_packet_number, num_versions));
-		write_packet(packet + useless_length + 12);
+		write_packet(packet + useless_length + 12, latest_packet_number);
 	} else {
 		log(packet_not_recovered_log(latest_packet_number, num_versions));
 	}
@@ -175,7 +181,8 @@ void receive_callback(uint8_t const *packet, size_t size) {
 		if (!written) {
 			if (validated) {
 				log(deferred_writing_log());
-				write_packet(packet_versions[0].data() + useless_length + 12);
+				write_packet(packet_versions[0].data() + useless_length + 12,
+				             latest_packet_number);
 			} else if (num_versions > 2) {
 				check_majority();
 			} else {
@@ -198,24 +205,61 @@ void receive_callback(uint8_t const *packet, size_t size) {
 
 	validated = true;
 	log(validated_log());
-	if (write_packet(startpos + 12)) {
+	if (write_packet(startpos + 12, packet_number)) {
 		written = true;
 	} else {
 		copy(packet, packet + size, packet_versions[0].data());
 	}
 }
 
+inline static int32_t get_int_sample(mono_sample_t const &smpl) {
+	int32_t ret;
+	memcpy(reinterpret_cast<uint8_t *>(&ret) + 4 - sizeof smpl, &smpl,
+	       sizeof smpl);
+	return ret >> (8 * (4 - sizeof smpl));
+}
+
+inline void mergewrite_samples(b_const_itr first, b_const_itr second) {
+	if (second->num == first->num + 1) {
+		write_samples(second->samples.data(), second->samples.size());
+	} else {
+		array<sample_t, batch_t().trailing.size()> samples;
+		for (int i = 0; i < samples.size(); ++i) {
+			sample_t &smp = samples[i];
+			sample_t const &s1 = first->trailing[i], &s2 = second->samples[i];
+			for (int ch = 0; ch < smp.size(); ++ch) {
+				int64_t const v1 = get_int_sample(s1[ch]),
+				              v2 = get_int_sample(s2[ch]);
+				int32_t val = v1 + i * (v2 - v1) / samples.size();
+				memcpy(&smp[ch], &val, sizeof smp[ch]);
+			}
+		}
+		write_samples(samples.data(), samples.size());
+		write_samples(second->samples.data() + samples.size(),
+		              second->samples.size() - samples.size());
+	}
+}
+
 void playing_loop(chrono::time_point<chrono::steady_clock> time) {
+	static int further_repeat = 0;
 	while (true) {
 		this_thread::sleep_until(time += duration);
-		packet_mut.lock();
-		if (pstart != pend) {
-			write_samples(packets[pstart].data(), packet_samples);
-			pstart = (pstart + 1) % packets.size();
-			packet_mut.unlock();
-			log(playing_log());
+		batch_mut.lock();
+		b_itr const b_next =
+		    b_start + 1 == batches.end() ? batches.begin() : b_start + 1;
+		if (b_end != b_next) {
+			further_repeat = max_repeat;
+			mergewrite_samples(b_start, b_next);
+			b_start = b_next;
+			batch_mut.unlock();
+			log(playing_log(b_start->num));
+		} else if (further_repeat) {
+			--further_repeat;
+			mergewrite_samples(b_start, b_start);
+			batch_mut.unlock();
+			log(repeat_play_log(b_start->num));
 		} else {
-			packet_mut.unlock();
+			batch_mut.unlock();
 			log(reader_waiting_log());
 		}
 	}

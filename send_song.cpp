@@ -139,7 +139,7 @@ uint8_t *fill_packet(uint8_t *pos) {
 	}
 	pos += 8;
 
-	for (int i = 0; i < packet_samples; ++i) {
+	for (int i = 0; i < total_samples; ++i) {
 		for (int t = 0; t < num_channels; ++t) {
 			int32_t val = shift(
 			    song.value(song_pos, t),
@@ -153,7 +153,8 @@ uint8_t *fill_packet(uint8_t *pos) {
 	}
 	++packet_num;
 
-	return byte_depth * num_channels * packet_samples + pos;
+	song_pos -= trailing_samples;
+	return byte_depth * num_channels * total_samples + pos;
 }
 
 int main(int argc, char **argv) {
@@ -205,7 +206,7 @@ int main(int argc, char **argv) {
 	auto time = steady_clock::now();
 
 	// Because input file is 16 bit stereo
-	for (int itr = 0; song_pos + packet_samples < song.chunk.size / 4; ++itr) {
+	for (int itr = 0; song_pos + total_samples < song.chunk.size / 4; ++itr) {
 		if (itr % 1000 == 0)
 			cout << "Sending next thousand packets" << endl;
 

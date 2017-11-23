@@ -12,16 +12,25 @@
 // (Due to MAC header, right now.)
 constexpr size_t useless_length = 32;
 constexpr size_t max_buf_size = 3;
+constexpr std::chrono::milliseconds max_play_at_end(50);
 constexpr std::chrono::microseconds duration(packet_samples * 1000000ull /
                                              samples_per_s);
 
-constexpr size_t packet_size = byte_depth * num_channels * packet_samples +
+constexpr int max_repeat = max_play_at_end / duration;
+
+constexpr size_t packet_size = byte_depth * num_channels * total_samples +
                                useless_length + magic_number.size() +
                                uid.size() + 4 /*packet number*/
                                + 4 /*FCS*/;
 
 typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
+
+struct batch_t {
+	uint32_t num;
+	std::array<sample_t, packet_samples> samples;
+	std::array<sample_t, trailing_samples> trailing;
+};
 
 extern std::ofstream logfile;
 
