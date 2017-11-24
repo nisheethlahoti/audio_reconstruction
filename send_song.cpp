@@ -205,6 +205,7 @@ int main(int argc, char **argv) {
 	using namespace chrono;
 	auto time = steady_clock::now();
 
+	auto duration = microseconds(packet_samples * 1000000ULL / samples_per_s);
 	// Because input file is 16 bit stereo
 	for (int itr = 0; song_pos + total_samples < song.chunk.size / 4; ++itr) {
 		if (itr % 1000 == 0)
@@ -212,15 +213,15 @@ int main(int argc, char **argv) {
 
 		uint8_t *endptr = fill_packet(packet_loc);
 		for (int i = 0; i < redundancy; ++i) {
+			while (steady_clock::now() < time + i * duration / redundancy)
+				;
 			if (pcap_sendpacket(ppcap, buf, endptr - buf + 4) != 0)
 				pcap_perror(ppcap, "Failed to inject song packet");
 			if (pcap_sendpacket(ppcap2, buf, endptr - buf + 4) != 0)
 				pcap_perror(ppcap2, "Failed to inject song packet");
 		}
 
-		time += microseconds(packet_samples * 1000000ULL / samples_per_s);
-		while (steady_clock::now() < time)
-			;
+		time += duration;
 	}
 	pcap_close(ppcap);
 	return 0;
