@@ -47,7 +47,7 @@ int main() {
 	}
 
 	int rval;
-	while ((rval = read(msgsock, samples, packet_samples * sizeof samples[0])) >
+	while ((rval = read(msgsock, samples, 10 * sizeof samples[0])) >
 	       0) {
 		int const num_samples = rval / sizeof samples[0];
 		if (num_samples * sizeof samples[0] != rval)

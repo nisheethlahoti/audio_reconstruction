@@ -53,7 +53,7 @@ void initialize(int const num_channels, int const byte_depth,
 	         num_channels,                   // number of channels
 	         sample_rate,                    // Sample rate
 	         1,                              // ?
-	         batch_size * 1500000ull / sample_rate)) < 0) {  // Max delay
+	         batch_size * 2000000ull / sample_rate)) < 0) {  // Max delay
 		cerr << "Parameter setting error: " << snd_strerror(err) << endl;
 		exit(1);
 	}
