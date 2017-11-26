@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <fstream>
+#include <mutex>
 
 #include "../../magic_number.h"
 #include "logger.h"
@@ -33,6 +34,7 @@ struct batch_t {
 };
 
 extern std::ofstream logfile;
+extern std::mutex logmut;
 
 void write_samples(void const *samples, size_t len);
 void receive_callback(uint8_t const packet[], size_t size);
@@ -43,6 +45,7 @@ uint32_t get_timediff();
 
 template <class logtype>
 void log(logtype const &log_m) {
+	std::lock_guard<std::mutex> lock(logmut);
 	binary_log(logfile, get_timediff(), log_m);
 }
 

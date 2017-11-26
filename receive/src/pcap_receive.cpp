@@ -9,12 +9,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <mutex>
 #include <thread>
 
 #include "receive.h"
 
 using namespace std;
 ofstream logfile("log.bin");
+mutex logmut;
 
 void my_callback(u_char *trash, pcap_pkthdr const *pkthdr,
                  u_char const *packet) {

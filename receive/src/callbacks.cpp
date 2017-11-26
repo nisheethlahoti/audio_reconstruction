@@ -4,7 +4,6 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
-#include <mutex>
 #include <thread>
 
 #include "receive.h"
@@ -269,7 +268,6 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 }
 
 uint32_t get_timediff() {
-	static mutex mut;
 	static auto tp = chrono::steady_clock::now();
 	auto prev = tp;
 	tp = chrono::steady_clock::now();
