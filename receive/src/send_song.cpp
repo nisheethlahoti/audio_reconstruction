@@ -1,5 +1,7 @@
 // WIFI CRC POLYNOMIAL IS 1 00000100 11000001 00011101 10110111
 
+#include <signal.h>
+#include <unistd.h>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -8,58 +10,19 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <thread>
 
-#include <pcap.h>
-#include <unistd.h>
-#include "magic_number.h"
+#include "receive.h"
 
 using namespace std;
-using namespace chrono;
+ofstream logfile("log.bin");
+mutex logmut;
 
 uint32_t packet_num = 1;
 
-uint8_t u8aRadiotapHeader[] = {
-    0x00, 0x00,  // <-- radiotap version (ignore this)
-    0x18, 0x00,  // <-- number of bytes in our header
-
-    /**
-     * The next field is a bitmap of which options we are including.
-     * The full list of which field is which option is in ieee80211_radiotap.h,
-     * but I've chosen to include:
-     *   0x00 0x01: timestamp
-     *   0x00 0x02: flags
-     *   0x00 0x03: rate
-     *   0x00 0x04: channel
-     *   0x80 0x00: tx flags (seems silly to have this AND flags, but oh well)
-     */
-    0x0f, 0x80, 0x00, 0x00,
-
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // <-- timestamp
-
-    /**
-     * This is the first set of flags, and we've set the bit corresponding to
-     * IEEE80211_RADIOTAP_F_FCS, meaning we want the card to add a FCS at the
-     * end of our buffer for us.
-     */
-    0x10,  // yes, there should be FCS at the end of the mac frame and it should
-           // be added by the card.
-
-    0x18,  // 0x0c <-- rate
-    // 0x00,0x00,0x00,0x00, //0x8c, 0x14, 0x40, 0x01, // <-- channel
-    0x6c, 0x09, 0xA0, 0x00,
-
-    /**
-     * This is the second set of flags, specifically related to transmissions.
-     * The bit we've set is IEEE80211_RADIOTAP_F_TX_NOACK, which means the card
-     * won't wait for an ACK for this frame, and that it won't retry if it
-     * doesn't get one.
-     */
-    0x08, 0x00,
-};
-
-array<uint8_t, 32> const mac_header = {
+array<uint8_t, 32> const mac_header = {{
     /*0*/ 0x08, 0x00,  // Frame Control for data frame
     /*2*/ 0x01, 0x01,  // Duration
     /*4*/ 0x01, 0x00, 0x5e, 0x1c, 0x04, 0x5e,
@@ -69,7 +32,8 @@ array<uint8_t, 32> const mac_header = {
 
     // addr4 is not present if not WDS(bridge)
     // IPLLC SNAP header : next 2 bytes, SNAP field : next 6 bytes
-    /*24*/ 0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x08, 0x00};
+    /*24*/ 0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x08, 0x00  // end
+}};
 
 struct wav_chunk {
 	std::string name;
@@ -158,71 +122,34 @@ uint8_t *fill_packet(uint8_t *pos) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 3) {
+	signal(SIGINT, exit);
+	if (argc < 2) {
 		cerr << "Not enough arguments\n";
 		return 1;
 	}
 
-	if (argc > 3)
-		u8aRadiotapHeader[17] = atoi(argv[3]);  // twice the intended data rate.
-
-	int redundancy = max_redundancy;
-	if (argc > 4) {
-		redundancy = atoi(argv[4]);
-		if (redundancy > max_redundancy) {
-			cerr << "Given redundancy exceeeds the maximum allowed.\n";
-			return 1;
-		}
-	}
-
-	if (argc > 5) {
-		packet_num = atoi(argv[5]);
-	}
-
-	/* PCAP vars */
-	char errbuf[PCAP_ERRBUF_SIZE];
+	default_random_engine gen(12345);
+	bernoulli_distribution dist(atof(argv[1]));
 
 	uint8_t buf[2000];
 	uint8_t *packet_loc = buf;
 
-	copy_and_shift(u8aRadiotapHeader,
-	               u8aRadiotapHeader + sizeof u8aRadiotapHeader, packet_loc);
 	copy_and_shift(mac_header.begin(), mac_header.end(), packet_loc);
 	copy_and_shift(uid.begin(), uid.end(), packet_loc);
 
-	pcap_t *ppcap = pcap_open_live(argv[1], 800, 1, 20, errbuf);
-	if (!ppcap) {
-		cerr << argv[1] << ": unable to open: " << errbuf << endl;
-		return 2;
-	}
+	initialize_player();
+	auto time = chrono::steady_clock::now();
+	thread(playing_loop, time).detach();
 
-	pcap_t *ppcap2 = pcap_open_live(argv[2], 800, 1, 20, errbuf);
-	if (!ppcap2) {
-		cerr << argv[2] << ": unable to open: " << errbuf << endl;
-		return 2;
-	}
-
-	using namespace chrono;
-	auto time = steady_clock::now();
-
-	auto duration = microseconds(packet_samples * 1000000ULL / samples_per_s);
 	// Because input file is 16 bit stereo
 	for (int itr = 0; song_pos + total_samples < song.chunk.size / 4; ++itr) {
 		if (itr % 1000 == 0)
 			cout << "Sending next thousand packets" << endl;
 
 		uint8_t *endptr = fill_packet(packet_loc);
-		for (int i = 0; i < redundancy; ++i) {
-			while (steady_clock::now() < time + i * duration / redundancy)
-				;
-			if (pcap_sendpacket(ppcap, buf, endptr - buf + 4) != 0)
-				pcap_perror(ppcap, "Failed to inject song packet");
-			if (pcap_sendpacket(ppcap2, buf, endptr - buf + 4) != 0)
-				pcap_perror(ppcap2, "Failed to inject song packet");
-		}
-
-		time += duration;
+		this_thread::sleep_until(time += duration);
+		if (!dist(gen))
+			receive_callback(buf, endptr - buf);
 	}
-	pcap_close(ppcap);
 	return 0;
 }
