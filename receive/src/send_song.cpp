@@ -22,6 +22,10 @@ mutex logmut;
 
 uint32_t packet_num = 1;
 
+// TODO: Infer from reading the input file, directly.
+constexpr size_t input_depth = 2;
+constexpr size_t input_channels = 2;
+
 array<uint8_t, 32> const mac_header = {{
     /*0*/ 0x08, 0x00,  // Frame Control for data frame
     /*2*/ 0x01, 0x01,  // Duration
@@ -78,10 +82,14 @@ struct wav_song {
 		reader.close();
 	}
 
-	// Assuming 16 bit stereo file. Also assuming num_channels <= 2
-	int16_t value(int const pos, int const channel) const {
-		return (chunk.data[4 * pos + 2 * channel] |
-		        (uint16_t)chunk.data[4 * pos + 2 * channel + 1] << 8U);
+	int32_t value(int const pos, int const channel) const {
+		int32_t ret = 0;
+		uint8_t const *const ptr =
+		    chunk.data + input_depth * (input_channels * pos + channel);
+		for (int i = 0; i < input_depth; ++i)
+			ret |= static_cast<uint32_t>(ptr[i]) << (8 * i);
+		ret = (ret << (4-input_depth)) >> (4-input_depth);
+		return ret;
 	}
 } song("filename.wav");
 
@@ -107,7 +115,7 @@ uint8_t *fill_packet(uint8_t *pos) {
 		for (int t = 0; t < num_channels; ++t) {
 			int32_t val = shift(
 			    song.value(song_pos, t),
-			    (8 * byte_depth - 16));  // Converting 16 bit to required size.
+			    8 * (byte_depth - input_depth));  // Converting 16 bit to required size.
 			for (int j = 0; j < byte_depth; ++j) {
 				pos[byte_depth * num_channels * i + t * byte_depth + j] =
 				    (val >> (8 * j)) & 0xff;
