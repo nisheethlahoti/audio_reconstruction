@@ -14,7 +14,7 @@ static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
 		case 2:
 			return SND_PCM_FORMAT_S16_LE;
 		case 3:
-			return SND_PCM_FORMAT_S24_LE;
+			return SND_PCM_FORMAT_S24_3LE;
 		case 4:
 			return SND_PCM_FORMAT_S32_LE;
 		default:

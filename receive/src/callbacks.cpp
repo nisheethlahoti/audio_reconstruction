@@ -92,7 +92,7 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 static inline bool write_packet(uint8_t const *packet, uint32_t const pnum) {
-	b_itr const finish = b_end.load(memory_order_relaxed);
+	b_itr const finish = b_end.load(memory_order_consume);
 	if (b_begin.load(memory_order_consume) == finish) {
 		log(full_buffer_log(pnum));
 		return false;
@@ -211,7 +211,7 @@ void receive_callback(uint8_t const *packet, size_t size) {
 
 inline static int32_t get_int_sample(mono_sample_t const &smpl) {
 	int32_t ret;
-	memcpy(reinterpret_cast<uint8_t *>(&ret) + 4 - sizeof smpl, &smpl,
+	memcpy(reinterpret_cast<uint8_t *>(&ret) + (4 - sizeof smpl), &smpl,
 	       sizeof smpl);
 	return ret >> (8 * (4 - sizeof smpl));
 }
@@ -228,7 +228,7 @@ static void mergewrite_samples(b_const_itr const first,
 			for (int ch = 0; ch < smp.size(); ++ch) {
 				int64_t const v1 = get_int_sample(s1[ch]),
 				              v2 = get_int_sample(s2[ch]);
-				int32_t val = v1 + i * (v2 - v1) / samples.size();
+				int32_t val = v1 + i * (v2 - v1) / ssize_t(samples.size());
 				memcpy(&smp[ch], &val, sizeof smp[ch]);
 			}
 		}
@@ -245,7 +245,7 @@ void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 		b_itr const start = b_begin.load(memory_order_relaxed);
 		b_itr const next =
 		    start == batches.end() - 1 ? batches.begin() : start + 1;
-		if (b_end.load(memory_order_consume) != next) {
+		if (b_end.load(memory_order_acquire) != next) {
 			further_repeat = max_repeat;
 			mergewrite_samples(start, next);
 			b_begin.store(next, memory_order_release);
