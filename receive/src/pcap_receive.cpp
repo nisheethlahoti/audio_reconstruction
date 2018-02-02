@@ -9,19 +9,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <mutex>
 #include <thread>
 
 #include "receive.h"
 
 using namespace std;
-ofstream logfile("log.bin");
-mutex logmut;
 
-void my_callback(u_char *trash, pcap_pkthdr const *pkthdr,
+void my_callback(u_char *logptr, pcap_pkthdr const *pkthdr,
                  u_char const *packet) {
 	size_t radiotap_len = packet[2] | size_t(packet[3]) << 8;
-	receive_callback(packet + radiotap_len, pkthdr->caplen - radiotap_len);
+	receive_callback(packet + radiotap_len, pkthdr->caplen - radiotap_len, *reinterpret_cast<logger_t*>(logptr));
 }
 
 int main(int argc, char **argv) {
@@ -38,11 +35,6 @@ int main(int argc, char **argv) {
 	/* PCAP vars */
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-	/**
-	 * Finally, we have the packet and are ready to inject it.
-	 * First, we open the interface we want to inject on using pcap.
-	 */
-
 	pcap_t *ppcap = pcap_open_live(argv[1], 2048, 1, -1, errbuf);
 	if (!ppcap) {
 		cerr << argv[1] << ": unable to open: " << errbuf << endl;
@@ -56,8 +48,10 @@ int main(int argc, char **argv) {
 	}
 
 	initialize_player();
-	thread(playing_loop, chrono::steady_clock::now()).detach();
-	thread t(pcap_loop, ppcap2, -1, my_callback, nullptr);
-	pcap_loop(ppcap, -1, my_callback, nullptr);
+
+	logger_t playlogger("play.bin"), if1logger("if1.bin"), if2logger("if2.bin");
+	thread(playing_loop, std::ref(playlogger)).detach();
+	thread t(pcap_loop, ppcap2, -1, my_callback, reinterpret_cast<u_char*>(&if2logger));
+	pcap_loop(ppcap, -1, my_callback, reinterpret_cast<u_char*>(&if1logger));
 	return 0;
 }
