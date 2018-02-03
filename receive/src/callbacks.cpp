@@ -122,13 +122,10 @@ static inline void check_majority(logger_t &logger) {
 	}
 }
 
-void receive_callback(uint8_t const *packet, size_t size, logger_t &logger) {
-	static mutex mut;
-	lock_guard<mutex> lock(mut);
-
-	uint8_t const *startpos = packet + useless_length;
-	if (size != packet_size) {
-		logger.log(invalid_size_log(static_cast<uint16_t>(size)));
+void receive_callback(raw_packet_t packet, logger_t &logger) {
+	uint8_t const *startpos = packet.data + useless_length;
+	if (packet.size != packet_size) {
+		logger.log(invalid_size_log(static_cast<uint16_t>(packet.size)));
 		return;
 	}
 
@@ -176,10 +173,10 @@ void receive_callback(uint8_t const *packet, size_t size, logger_t &logger) {
 		written = false;
 	}
 
-	uint32_t expected_crc = crc32(packet, size - 4),
-	         received_crc = get_little_endian(packet + size - 4);
+	uint32_t expected_crc = crc32(packet.data, packet.size - 4),
+	         received_crc = get_little_endian(packet.data + packet.size - 4);
 	if (expected_crc != received_crc) {
-		copy(packet, packet + size, packet_versions[num_versions++].data());
+		copy(packet.data, packet.data + packet.size, packet_versions[num_versions++].data());
 		logger.log(invalid_crc_log(expected_crc, received_crc));
 		return;
 	}
@@ -189,7 +186,7 @@ void receive_callback(uint8_t const *packet, size_t size, logger_t &logger) {
 	if (write_packet(startpos + 12, packet_number, logger)) {
 		written = true;
 	} else {
-		copy(packet, packet + size, packet_versions[0].data());
+		copy(packet.data, packet.data + packet.size, packet_versions[0].data());
 	}
 }
 

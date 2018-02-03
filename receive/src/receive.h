@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cstdint>
 #include <fstream>
-#include <mutex>
 
 #include "../../magic_number.h"
 #include "logger.h"
@@ -25,6 +24,11 @@ constexpr size_t packet_size = byte_depth * num_channels * total_samples + usele
 typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
 
+struct raw_packet_t {
+	uint8_t const *data;
+	size_t size;
+};
+
 struct batch_t {
 	uint32_t num;
 	std::array<sample_t, packet_samples> samples;
@@ -32,7 +36,7 @@ struct batch_t {
 };
 
 void write_samples(void const *samples, size_t len);
-void receive_callback(uint8_t const packet[], size_t size, logger_t &logger);
+void receive_callback(raw_packet_t packet, logger_t &logger);
 
 void initialize_player();
 void playing_loop(logger_t &);

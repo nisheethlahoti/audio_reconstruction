@@ -17,6 +17,8 @@ logger_t::logger_t(char const *fname) : logfile(fname, std::ios::binary) {
 	logfile.write(reinterpret_cast<char const *>(&us), 8);
 }
 
+logger_t::~logger_t() { logfile.close(); }
+
 uint32_t logger_t::get_timediff() {
 	using namespace std::chrono;
 	auto const prev = time;
