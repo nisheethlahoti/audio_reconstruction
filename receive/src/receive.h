@@ -18,8 +18,7 @@ constexpr std::chrono::microseconds duration(packet_samples * 1000000ull / sampl
 constexpr int max_repeat = max_play_at_end / duration;
 
 constexpr size_t packet_size = byte_depth * num_channels * total_samples + useless_length +
-                               magic_number.size() + uid.size() + 4 /*packet number*/
-                               + 4 /*FCS*/;
+                               magic_number.size() + uid.size() + 4 /*packet number*/;
 
 typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
