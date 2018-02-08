@@ -24,8 +24,9 @@ typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
 
 struct raw_packet_t {
-	uint8_t const *data;
-	size_t size;
+	timeval ts;
+	uint8_t const *data, *radiotap;
+	size_t size, radiotap_size;
 };
 
 struct batch_t {

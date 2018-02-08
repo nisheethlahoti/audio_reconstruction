@@ -28,6 +28,7 @@ capture_t::capture_t(capture_t &&other) {
 int capture_t::fd() const { return fd_; }
 
 raw_packet_t capture_t::get_packet() const {
+	raw_packet_t ret;
 	pcap_pkthdr header;
 	uint8_t const *packet = pcap_next(pcap, &header);
 	if (packet == nullptr) {
@@ -36,7 +37,12 @@ raw_packet_t capture_t::get_packet() const {
 	}
 
 	size_t radiotap_len = packet[2] | size_t(packet[3]) << 8;
-	return raw_packet_t{packet + radiotap_len, header.caplen - radiotap_len};
+	ret.ts = header.ts;
+	ret.data = packet + radiotap_len;
+	ret.radiotap = packet;
+	ret.size = header.caplen - radiotap_len;
+	ret.radiotap_size = radiotap_len;
+	return ret;
 }
 
 capture_t::~capture_t() {

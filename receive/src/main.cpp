@@ -47,10 +47,7 @@ int main(int argc, char **argv) {
 	if (captures.empty())
 		return 1;
 
-	logger_t playlogger("play.bin"), packetlogger("packet.bin");
-	std::thread(playing_loop, std::ref(playlogger)).detach();
-	initialize_player();
-
+	logger_t packetlogger("packet.bin");
 	std::cerr << "Press enter to stop..." << std::endl;
 	while (multiplexer.next(), !multiplexer.is_ready(0)) {
 		for (capture_t const &cap : captures)

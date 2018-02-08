@@ -10,6 +10,10 @@
 
 #include "loglist.h"
 
+void logger_t::write(void const *bytes, size_t size) {
+	logfile.write(static_cast<char const *>(bytes), size);
+}
+
 logger_t::logger_t(char const *fname) : logfile(fname, std::ios::binary) {
 	using namespace std::chrono;
 	time = steady_clock::now();

@@ -53,6 +53,7 @@ class logger_t {
 	logger_t(char const *fname);
 	~logger_t();
 
+	void write(void const *bytes, size_t size);
 	template <class logtype>
 	inline void log(logtype const &log_m) {
 		uint32_t timediff = get_timediff() << 1;
