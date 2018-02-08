@@ -9,6 +9,6 @@ class capture_t {
 	capture_t(char const *);
 	capture_t(capture_t &&);
 	int fd() const;
-	raw_packet_t get_packet() const;
+	raw_packet_t get_packet();
 	~capture_t();
 };

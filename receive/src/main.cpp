@@ -5,8 +5,8 @@
 #include <thread>
 #include <vector>
 
-#include "receive.h"
 #include "capture.h"
+#include "receive.h"
 
 // Just a C++ style wrapper around the select() syscall
 class multiplexer_t {
@@ -50,9 +50,13 @@ int main(int argc, char **argv) {
 	logger_t packetlogger("packet.bin");
 	std::cerr << "Press enter to stop..." << std::endl;
 	while (multiplexer.next(), !multiplexer.is_ready(0)) {
-		for (capture_t const &cap : captures)
-			if (multiplexer.is_ready(cap.fd()))
-				receive_callback(cap.get_packet(), packetlogger);
+		for (capture_t &cap : captures)
+			if (multiplexer.is_ready(cap.fd())) {
+				raw_packet_t const packet = cap.get_packet();
+				packetlogger.log(captured_log(cap.fd(), packet.radiotap_size));
+				packetlogger.write(packet.radiotap, packet.radiotap_size);
+				receive_callback(packet, packetlogger);
+			}
 	}
 
 	return 0;

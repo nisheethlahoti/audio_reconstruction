@@ -11,7 +11,6 @@
 // Length at beginning of packet that is  useless.
 // (Due to MAC header, right now.)
 constexpr size_t useless_length = 32;
-constexpr size_t max_buf_size = 3;
 constexpr std::chrono::milliseconds max_play_at_end(50);
 constexpr std::chrono::microseconds duration(packet_samples * 1000000ull / samples_per_s);
 
@@ -27,12 +26,6 @@ struct raw_packet_t {
 	timeval ts;
 	uint8_t const *data, *radiotap;
 	size_t size, radiotap_size;
-};
-
-struct batch_t {
-	uint32_t num;
-	std::array<sample_t, packet_samples> samples;
-	std::array<sample_t, trailing_samples> trailing;
 };
 
 void write_samples(void const *samples, size_t len);

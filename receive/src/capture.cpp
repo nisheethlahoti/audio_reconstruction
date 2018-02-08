@@ -18,6 +18,8 @@ capture_t::capture_t(char const *iface) {
 	fd_ = pcap_get_selectable_fd(pcap);
 	if (fd_ == -1)
 		perror("Error getting fd_ from pcap");
+	else
+		std::cerr << "Opened on fd " << fd_ << std::endl;
 }
 
 capture_t::capture_t(capture_t &&other) {
@@ -27,8 +29,12 @@ capture_t::capture_t(capture_t &&other) {
 
 int capture_t::fd() const { return fd_; }
 
-raw_packet_t capture_t::get_packet() const {
-	raw_packet_t ret;
+capture_t::capture_t(capture_t &&other) {
+	std::memcpy(this, &other, sizeof(*this));
+	other.pcap = nullptr;
+}
+
+raw_packet_t capture_t::get_packet() {
 	pcap_pkthdr header;
 	uint8_t const *packet = pcap_next(pcap, &header);
 	if (packet == nullptr) {
@@ -37,6 +43,7 @@ raw_packet_t capture_t::get_packet() const {
 	}
 
 	size_t radiotap_len = packet[2] | size_t(packet[3]) << 8;
+	raw_packet_t ret;
 	ret.ts = header.ts;
 	ret.data = packet + radiotap_len;
 	ret.radiotap = packet;

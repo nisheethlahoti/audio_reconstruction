@@ -5,19 +5,45 @@
 using namespace std;
 
 template <class logtype>
-void read_log(std::istream &cin, logtype &log_m) {
-	for_each(log_m.arg_vals, [&cin, &log_m](int index, auto &val) {
-		cin.read(reinterpret_cast<char *>(&val), sizeof(val));
+void read_log(std::istream &in, logtype &log_m) {
+	for_each(log_m.arg_vals, [&in, &log_m](int index, auto &val) {
+		in.read(reinterpret_cast<char *>(&val), sizeof(val));
 	});
 }
 
 template <class logtype>
-void text_log(std::ostream &out, uint32_t timediff, logtype const &log_m) {
+void partial_log(std::ostream &out, uint32_t timediff, logtype const &log_m) {
 	out << timediff << ' ' << log_m.message << "::";
 	for_each(log_m.arg_vals, [&out, &log_m](int index, auto const &val) {
 		out << ' ' << log_m.arg_names[index] << ": " << val << ";";
 	});
 	out << std::endl;
+}
+
+void bytes_log(std::istream &in, std::ostream &out, int size) {
+	char bytes[size];
+	in.read(bytes, sizeof(bytes));
+	for (int i = 0; i < sizeof(bytes); ++i) {
+		out << uint16_t(uint8_t(bytes[i])) << ' ';
+	}
+	out << std::endl;
+}
+
+template <class logtype>
+void text_log(std::istream &in, std::ostream &out, uint32_t timediff, logtype const &log_m) {
+	partial_log(out, timediff, log_m);
+}
+
+template <>
+void text_log(std::istream &in, std::ostream &out, uint32_t timediff, captured_log const &log_m) {
+	partial_log(out, timediff, log_m);
+	bytes_log(in, out, std::get<1>(log_m.arg_vals));
+}
+
+template <>
+void text_log(std::istream &in, std::ostream &out, uint32_t timediff, validated_log const &log_m) {
+	partial_log(out, timediff, log_m);
+	bytes_log(in, out, std::get<0>(log_m.arg_vals));
 }
 
 #define ZERO_OUT(X) 0
@@ -26,7 +52,7 @@ void text_log(std::ostream &out, uint32_t timediff, logtype const &log_m) {
 	case ID: {                                              \
 		CONCAT(NAME, _log) val{MAP(ZERO_OUT, __VA_ARGS__)}; \
 		read_log(cin, val);                                 \
-		text_log(cout, timediff, val);                      \
+		text_log(cin, cout, timediff, val);                 \
 		break;                                              \
 	}
 
