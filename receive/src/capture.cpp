@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 
 #include "capture.h"
@@ -17,6 +18,11 @@ capture_t::capture_t(char const *iface) {
 	fd_ = pcap_get_selectable_fd(pcap);
 	if (fd_ == -1)
 		perror("Error getting fd_ from pcap");
+}
+
+capture_t::capture_t(capture_t &&other) {
+	std::memcpy(this, &other, sizeof(*this));
+	other.pcap = nullptr;
 }
 
 int capture_t::fd() const { return fd_; }
