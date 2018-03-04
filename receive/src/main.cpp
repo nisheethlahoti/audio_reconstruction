@@ -30,8 +30,8 @@ class multiplexer_t {
 	inline bool is_ready(int fd) const { return FD_ISSET(fd, &tmpset); }
 };
 
-static inline void prompt_input() {
-	std::cerr << (correction_on ? "Corrections on." : "Corrections off.");
+static inline void prompt_input(bool corr) {
+	std::cerr << (corr ? "Corrections on." : "Corrections off.");
 	std::cerr << " Enter (c) to toggle corrections and (q) to quit: ";
 	std::cerr.flush();
 }
@@ -57,15 +57,17 @@ int main(int argc, char **argv) {
 	std::thread(playing_loop, std::ref(playlogger)).detach();
 	initialize_player();
 
-	prompt_input();
+	std::cout.setf(std::ios_base::unitbuf); // Making cout unbuffered
+	prompt_input(correction_on);
 	while (true) {
 		multiplexer.next();
 		if (multiplexer.is_ready(0)) {
 			std::string str;
 			std::getline(std::cin, str);
 			if (str[0] == 'c') {
-				correction_on = !correction_on;
-				prompt_input();
+				bool corr = correction_on.load(std::memory_order_relaxed);
+				correction_on.store(!corr, std::memory_order_release);
+				prompt_input(!corr);
 			} else if (str[0] == 'q') {
 				return 0;
 			}

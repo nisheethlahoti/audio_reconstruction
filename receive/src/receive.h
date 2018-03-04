@@ -1,6 +1,7 @@
 #ifndef SOUNDREX_RECEIVE_H
 #define SOUNDREX_RECEIVE_H
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
@@ -40,5 +41,5 @@ void receive_callback(raw_packet_t packet, logger_t &logger);
 void initialize_player();
 void playing_loop(logger_t &);
 
-extern bool correction_on;
+extern std::atomic<bool> correction_on;
 #endif /* SOUNDREX_RECEIVE_H */

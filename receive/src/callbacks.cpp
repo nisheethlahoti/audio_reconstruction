@@ -12,7 +12,7 @@ using namespace std;
 typedef array<uint8_t, packet_size> packet_t;
 
 static uint32_t latest_packet_number = 0;
-bool correction_on = true;
+atomic<bool> correction_on(true);
 
 array<batch_t, max_buf_size + 1> batches;
 typedef decltype(batches)::iterator b_itr;
@@ -88,7 +88,10 @@ inline static int32_t get_int_sample(mono_sample_t const &smpl) {
 }
 
 static void mergewrite_samples(b_const_itr const first, b_const_itr const second) {
-	if (!correction_on || second->num == first->num + 1) {
+	if (second->num != first->num + 1)
+		std::cout.put(second->num == first->num ? '#' : '*');
+
+	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
 		array<sample_t, batch_t().trailing.size()> samples;
