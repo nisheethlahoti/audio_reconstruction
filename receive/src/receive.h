@@ -40,4 +40,5 @@ void receive_callback(raw_packet_t packet, logger_t &logger);
 void initialize_player();
 void playing_loop(logger_t &);
 
+extern bool correction_on;
 #endif /* SOUNDREX_RECEIVE_H */
