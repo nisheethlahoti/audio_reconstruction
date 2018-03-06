@@ -43,11 +43,11 @@ static inline bool write_packet(uint8_t const *packet, uint32_t pnum, logger_t &
 	}
 }
 
-void receive_callback(raw_packet_t packet, logger_t &logger) {
+bool receive_callback(raw_packet_t packet, logger_t &logger) {
 	uint8_t const *startpos = packet.data + useless_length;
 	if (packet.size != packet_size) {
 		logger.log(invalid_size_log(static_cast<uint16_t>(packet.size)));
-		return;
+		return false;
 	}
 
 	array<uint8_t, 4> xor_val = magic_number;
@@ -57,28 +57,29 @@ void receive_callback(raw_packet_t packet, logger_t &logger) {
 
 	if (xor_val != array<uint8_t, 4>()) {
 		logger.log(invalid_magic_number_log(get_little_endian(startpos)));
-		return;
+		return false;
 	}
 
 	if (!equal(uid.begin(), uid.end(), startpos)) {
 		logger.log(invalid_uid_log(get_little_endian(startpos)));
-		return;
+		return false;
 	}
 
 	uint32_t packet_number = get_little_endian(uid.size() + startpos);
 	if (packet_number < latest_packet_number) {
 		logger.log(older_packet_log(latest_packet_number, packet_number));
-		return;
+		return false;
 	}
 
 	if (packet_number == latest_packet_number) {
 		logger.log(repeated_packet_log(packet_number));
-		return;
+		return true;
 	}
 
 	latest_packet_number = packet_number;
 	logger.log(validated_log());
 	write_packet(startpos + 12, packet_number, logger);
+	return true;
 }
 
 inline static int32_t get_int_sample(mono_sample_t const &smpl) {
@@ -88,9 +89,6 @@ inline static int32_t get_int_sample(mono_sample_t const &smpl) {
 }
 
 static void mergewrite_samples(b_const_itr const first, b_const_itr const second) {
-	if (second->num != first->num + 1)
-		std::cout.put(second->num == first->num ? '#' : '*');
-
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {

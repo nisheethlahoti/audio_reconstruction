@@ -36,7 +36,7 @@ struct batch_t {
 };
 
 void write_samples(void const *samples, size_t len);
-void receive_callback(raw_packet_t packet, logger_t &logger);
+bool receive_callback(raw_packet_t packet, logger_t &logger);
 
 void initialize_player();
 void playing_loop(logger_t &);

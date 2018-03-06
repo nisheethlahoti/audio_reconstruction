@@ -4,12 +4,22 @@
 
 #include "capture.h"
 
-capture_t::capture_t(char const *iface) {
+int capture_t::fd() const { return fd_; }
+std::string const &capture_t::name() const { return name_; }
+void capture_t::addrecv() { ++recv; }
+
+unsigned capture_t::getrecv() {
+	auto ret = recv;
+	recv = 0;
+	return ret;
+}
+
+capture_t::capture_t(char const *iface) : name_(iface), recv(0) {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	std::cerr << "Opening interface " << iface << std::endl;
 	fd_ = -1;
 
-	pcap = pcap_open_live(iface, 2048, 1, -1, errbuf);
+	pcap = pcap_open_live(iface, packet_size + 30, 1, -1, errbuf);
 	if (pcap == nullptr) {
 		std::cerr << "unable to open: " << errbuf << std::endl;
 		return;
@@ -25,9 +35,7 @@ capture_t::capture_t(capture_t &&other) {
 	other.pcap = nullptr;
 }
 
-int capture_t::fd() const { return fd_; }
-
-raw_packet_t capture_t::get_packet() const {
+raw_packet_t capture_t::get_packet() {
 	pcap_pkthdr header;
 	uint8_t const *packet = pcap_next(pcap, &header);
 	if (packet == nullptr) {

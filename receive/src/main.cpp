@@ -1,6 +1,7 @@
 #include <sys/select.h>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -31,9 +32,7 @@ class multiplexer_t {
 };
 
 static inline void prompt_input(bool corr) {
-	std::cerr << (corr ? "Corrections on." : "Corrections off.");
-	std::cerr << " Enter (c) to toggle corrections and (q) to quit: ";
-	std::cerr.flush();
+	std::cerr << (corr ? "Corrections on.\n" : "Corrections off.\n");
 }
 
 int main(int argc, char **argv) {
@@ -56,9 +55,12 @@ int main(int argc, char **argv) {
 	logger_t playlogger("play.bin"), packetlogger("packet.bin");
 	std::thread(playing_loop, std::ref(playlogger)).detach();
 	initialize_player();
+	std::cerr << std::fixed << std::setprecision(2);
 
-	std::cout.setf(std::ios_base::unitbuf); // Making cout unbuffered
+	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";
 	prompt_input(correction_on);
+
+	auto time = std::chrono::steady_clock::now();
 	while (true) {
 		multiplexer.next();
 		if (multiplexer.is_ready(0)) {
@@ -73,8 +75,20 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		for (capture_t const &cap : captures)
+		auto curr = std::chrono::steady_clock::now();
+		auto tdiff = std::chrono::duration_cast<std::chrono::milliseconds>(curr - time).count();
+		if (tdiff >= 1000) {
+			double expected = samples_per_s * 3 * tdiff / 1000.0 / packet_samples;
+			time = curr;
+			std::cerr << "Expected " << expected << " packets in " << tdiff << " ms. Dropped";
+			for (capture_t &cap : captures)
+				std::cerr << ' ' << expected - cap.getrecv() << " on " << cap.name() << ';';
+			std::cerr << '\n';
+		}
+
+		for (capture_t &cap : captures)
 			if (multiplexer.is_ready(cap.fd()))
-				receive_callback(cap.get_packet(), packetlogger);
+				if (receive_callback(cap.get_packet(), packetlogger))
+					cap.addrecv();
 	}
 }
