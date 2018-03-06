@@ -5,7 +5,7 @@
 #include "capture.h"
 
 int capture_t::fd() const { return fd_; }
-std::string const &capture_t::name() const { return name_; }
+char const *capture_t::name() const { return name_; }
 void capture_t::addrecv() { ++recv; }
 
 unsigned capture_t::getrecv() {
@@ -14,14 +14,31 @@ unsigned capture_t::getrecv() {
 	return ret;
 }
 
-capture_t::capture_t(char const *iface) : name_(iface), recv(0) {
+capture_t::capture_t(char const *iface) : recv(0) {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	std::cerr << "Opening interface " << iface << std::endl;
 	fd_ = -1;
+	std::strcpy(name_, iface);
 
-	pcap = pcap_open_live(iface, packet_size + 30, 1, -1, errbuf);
+	pcap = pcap_create(iface, errbuf);
 	if (pcap == nullptr) {
 		std::cerr << "unable to open: " << errbuf << std::endl;
+		return;
+	}
+
+	if (pcap_can_set_rfmon(pcap) != 1) {
+		std::cerr << "Can't set monitor mode on " << iface << std::endl;
+		return;
+	}
+
+	pcap_set_snaplen(pcap, packet_size + 100);
+	pcap_set_immediate_mode(pcap, 1);
+	pcap_set_rfmon(pcap, 1);
+	pcap_set_timeout(pcap, -1);
+
+	if (int ret = pcap_activate(pcap); ret) {
+		std::cerr << "Error activating: " << pcap_statustostr(ret) << std::endl;
+		pcap_perror(pcap, "Activation error detail");
 		return;
 	}
 
@@ -48,6 +65,6 @@ raw_packet_t capture_t::get_packet() {
 }
 
 capture_t::~capture_t() {
-	if (pcap)
+	if (pcap != nullptr)
 		pcap_close(pcap);
 }

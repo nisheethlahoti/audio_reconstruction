@@ -1,12 +1,12 @@
+#include <net/if.h>
 #include <pcap.h>
-#include <string>
 #include "receive.h"
 
 class capture_t {
 	pcap_t *pcap;
-	std::string name_;
 	int fd_;
 	unsigned int recv;
+	char name_[IF_NAMESIZE];
 
    public:
 	capture_t(char const *);
@@ -14,7 +14,7 @@ class capture_t {
 	~capture_t();
 
 	int fd() const;
-	std::string const &name() const;
+	char const *name() const;
 	raw_packet_t get_packet();
 
 	void addrecv();

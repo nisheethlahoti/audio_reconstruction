@@ -68,7 +68,7 @@ bool receive_callback(raw_packet_t packet, logger_t &logger) {
 	uint32_t packet_number = get_little_endian(uid.size() + startpos);
 	if (packet_number < latest_packet_number) {
 		logger.log(older_packet_log(latest_packet_number, packet_number));
-		return false;
+		return true;
 	}
 
 	if (packet_number == latest_packet_number) {
