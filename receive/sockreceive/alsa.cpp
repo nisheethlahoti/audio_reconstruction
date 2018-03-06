@@ -1,6 +1,9 @@
 #include <alsa/asoundlib.h>
+#include <array>
 #include <cstdint>
 #include <iostream>
+
+#include "../src/receive.h"
 
 using namespace std;
 
@@ -28,32 +31,37 @@ void play_samples(void const *samples, size_t len) {
 	if (frames < 0) {
 		cerr << "snd_pcm_writei failed: " << snd_strerror(frames) << endl;
 	} else if (frames < len) {
-		cerr << "Short write (expected " << len << ", wrote " << frames << ')'
-		     << endl;
+		cerr << "Short write (expected " << len << ", wrote " << frames << ')' << endl;
 	}
 
 	if (frames < 0)
-		cerr << (snd_pcm_recover(handle, frames, 0) ? "Recovered"
-		                                            : "Could not recover")
-		     << endl;
+		cerr << (snd_pcm_recover(handle, frames, 0) ? "Recovered" : "Could not recover") << endl;
 }
 
-void initialize(int const num_channels, int const byte_depth,
-                uint32_t const sample_rate, size_t const batch_size) {
+void player_pause(int enable) {
+	snd_pcm_pause(handle, enable);
+	if (enable == 0) {
+		array<sample_t, packet_samples / 2> samples{};
+		cerr << "Resuming.\n";
+		play_samples(samples.data(), samples.size());
+	}
+}
+
+void initialize(int const num_channels, int const byte_depth, uint32_t const sample_rate,
+                size_t const batch_size) {
 	int err;
 	if ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
 		cerr << "Playback open error: " << snd_strerror(err) << endl;
 		exit(1);
 	}
 
-	if ((err = snd_pcm_set_params(
-	         handle,                  // handle
-	         pcm_format(byte_depth),  // Format of individual channel samples
-	         SND_PCM_ACCESS_RW_INTERLEAVED,  // Input-output multiplexing
-	         num_channels,                   // number of channels
-	         sample_rate,                    // Sample rate
-	         1,                              // ?
-	         batch_size * 2000000ull / sample_rate)) < 0) {  // Max delay
+	if ((err = snd_pcm_set_params(handle,                  // handle
+	                              pcm_format(byte_depth),  // Format of individual channel samples
+	                              SND_PCM_ACCESS_RW_INTERLEAVED,  // Input-output multiplexing
+	                              num_channels,                   // number of channels
+	                              sample_rate,                    // Sample rate
+	                              1,                              // ?
+	                              batch_size * 2000000ull / sample_rate)) < 0) {  // Max delay
 		cerr << "Parameter setting error: " << snd_strerror(err) << endl;
 		exit(1);
 	}

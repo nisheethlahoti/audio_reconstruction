@@ -12,7 +12,7 @@ using namespace std;
 typedef array<uint8_t, packet_size> packet_t;
 
 static uint32_t latest_packet_number = 0;
-atomic<bool> correction_on(true);
+atomic<bool> correction_on(true), running(true);
 
 array<batch_t, max_buf_size + 1> batches;
 typedef decltype(batches)::iterator b_itr;
@@ -111,7 +111,7 @@ static void mergewrite_samples(b_const_itr const first, b_const_itr const second
 void playing_loop(logger_t &logger) {
 	int further_repeat = 0;
 	auto time = chrono::steady_clock::now();
-	while (true) {
+	while (running.load(std::memory_order_consume)) {
 		this_thread::sleep_until(time += duration);
 		b_itr const start = b_begin.load(memory_order_relaxed);
 		b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
@@ -126,6 +126,7 @@ void playing_loop(logger_t &logger) {
 			mergewrite_samples(start, start);
 			logger.log(repeat_play_log(start->num));
 		} else {
+			pause_player();
 			logger.log(reader_waiting_log());
 			int bdiff = 0;
 			do {
@@ -133,7 +134,9 @@ void playing_loop(logger_t &logger) {
 				bdiff = b_end.load(memory_order_consume) - next;
 				if (bdiff < 0)
 					bdiff += batches.size();
-			} while (bdiff < batches.size() / 2);
+			} while (running.load(std::memory_order_consume) && bdiff < batches.size() / 2);
 		}
 	}
+
+	stop_player();
 }

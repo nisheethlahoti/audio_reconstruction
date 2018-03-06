@@ -14,7 +14,7 @@
 constexpr size_t useless_length = 32;
 constexpr size_t max_buf_size = 3;
 constexpr std::chrono::milliseconds max_play_at_end(50);
-constexpr std::chrono::microseconds duration(packet_samples * 1000000ull / samples_per_s);
+constexpr std::chrono::nanoseconds duration(packet_samples * 1000000000ull / samples_per_s);
 
 constexpr int max_repeat = max_play_at_end / duration;
 
@@ -39,7 +39,9 @@ void write_samples(void const *samples, size_t len);
 bool receive_callback(raw_packet_t packet, logger_t &logger);
 
 void initialize_player();
+void pause_player();
+void stop_player();
 void playing_loop(logger_t &);
 
-extern std::atomic<bool> correction_on;
+extern std::atomic<bool> correction_on, running;
 #endif /* SOUNDREX_RECEIVE_H */

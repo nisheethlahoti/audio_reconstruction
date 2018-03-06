@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
 	set_scheduling(pthread_self(), player.native_handle());
 
 	initialize_player();
-	player.detach();
 
+	std::cin.setf(std::ios::unitbuf);
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";
 
@@ -73,14 +73,13 @@ int main(int argc, char **argv) {
 	while (true) {
 		multiplexer.next();
 		if (multiplexer.is_ready(0)) {
-			std::string str;
-			std::getline(std::cin, str);
-			if (str[0] == 'c') {
+			char const c = std::cin.get();
+			if (c == 'c') {
 				bool corr = correction_on.load(std::memory_order_relaxed);
 				correction_on.store(!corr, std::memory_order_release);
 				std::cerr << (corr ? "Corrections off.\n" : "Corrections on.\n");
-			} else if (str[0] == 'q') {
-				return 0;
+			} else if (c == 'q') {
+				break;
 			}
 		}
 
@@ -100,4 +99,8 @@ int main(int argc, char **argv) {
 				if (receive_callback(cap.get_packet(), packetlogger))
 					cap.addrecv();
 	}
+
+	running.store(false, std::memory_order_release);
+	player.join();
+	return 0;
 }

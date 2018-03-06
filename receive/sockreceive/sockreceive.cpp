@@ -17,11 +17,13 @@
 
 using namespace std;
 
-static sample_t samples[1024];
-static char const sockname[] = "/tmp/socket";
+static array<sample_t, packet_samples> samples;
+char *const packet = reinterpret_cast<char *>(samples.data());
+static char const sockname[] = "/tmp/socket-server";
 
 void play_samples(void const *samples, size_t len);
 void initialize(int num_ch, int byte_dp, uint32_t sample_rate, size_t batch_sz);
+void player_pause(int enable);
 
 int main() {
 	auto const policy = SCHED_RR;
@@ -32,7 +34,7 @@ int main() {
 	wav_header_t header(num_channels, samples_per_s, byte_depth);
 	wav_writer_t<sample_t> outp("outp.wav", header);
 
-	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	int sock = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (sock < 0) {
 		perror("opening stream socket");
 		return 1;
@@ -42,37 +44,39 @@ int main() {
 	server.sun_family = AF_UNIX;
 	strcpy(server.sun_path, sockname);
 	if (bind(sock, reinterpret_cast<sockaddr *>(&server), sizeof server)) {
-		perror("binding stream socket");
+		perror("binding dgram socket");
 		return 1;
 	}
 
-	listen(sock, 1);
-	int msgsock = accept(sock, nullptr, nullptr);
-	if (msgsock == -1) {
-		perror("accept");
+	bool paused = true;
+	int bytes;
+	while ((bytes = recv(sock, packet, sizeof(samples), 0)) > 0) {
+		if (bytes > 1) {
+			int const num_samples = bytes / sizeof(sample_t);
+			if (num_samples * sizeof(sample_t) != bytes) {
+				cerr << "Received partial sample.\n";
+				break;
+			}
+
+			if (paused) {
+				player_pause(0);
+				paused = false;
+			}
+
+			play_samples(packet, num_samples);
+			for (int i = 0; i < num_samples; ++i)
+				outp.add_sample(samples[i]);
+		} else {
+			player_pause(1);
+			paused = true;
+		}
 	}
 
-	int rval;
-	while ((rval = read(msgsock, samples, 10 * sizeof samples[0])) > 0) {
-		int const num_samples = rval / sizeof samples[0];
-		if (num_samples * sizeof samples[0] != rval)
-			break;
-		play_samples(samples, num_samples);
-		for (int i = 0; i < num_samples; ++i)
-			outp.add_sample(samples[i]);
+	if (bytes < 0) {
+		perror("error receiving");
 	}
 
-	close(msgsock);
 	close(sock);
 	unlink(sockname);
-
-	if (rval < 0) {
-		perror("reading stream message");
-		return 1;
-	} else if (rval % sizeof samples[0]) {
-		cerr << rval << " not divisible by " << sizeof samples[0] << endl;
-		return 2;
-	} else {
-		return 0;
-	}
+	return 0;
 }
