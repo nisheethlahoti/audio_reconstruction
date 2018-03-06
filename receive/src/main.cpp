@@ -1,3 +1,5 @@
+#include <pthread.h>
+#include <sched.h>
 #include <sys/select.h>
 #include <cstdio>
 #include <cstdlib>
@@ -31,8 +33,13 @@ class multiplexer_t {
 	inline bool is_ready(int fd) const { return FD_ISSET(fd, &tmpset); }
 };
 
-static inline void prompt_input(bool corr) {
-	std::cerr << (corr ? "Corrections on.\n" : "Corrections off.\n");
+static inline void set_scheduling(pthread_t packet, pthread_t play) {
+	constexpr auto policy = SCHED_RR;
+	auto const maxpr = sched_get_priority_max(policy), minpr = sched_get_priority_min(policy);
+	sched_param const packetparam{(maxpr + 2 * minpr) / 3}, playparam{(2 * maxpr + minpr) / 3};
+
+	pthread_setschedparam(packet, policy, &packetparam);
+	pthread_setschedparam(play, policy, &playparam);
 }
 
 int main(int argc, char **argv) {
@@ -53,12 +60,14 @@ int main(int argc, char **argv) {
 		return 1;
 
 	logger_t playlogger("play.bin"), packetlogger("packet.bin");
-	std::thread(playing_loop, std::ref(playlogger)).detach();
-	initialize_player();
-	std::cerr << std::fixed << std::setprecision(2);
+	std::thread player(playing_loop, std::ref(playlogger));
+	set_scheduling(pthread_self(), player.native_handle());
 
+	initialize_player();
+	player.detach();
+
+	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";
-	prompt_input(correction_on);
 
 	auto time = std::chrono::steady_clock::now();
 	while (true) {
@@ -69,7 +78,7 @@ int main(int argc, char **argv) {
 			if (str[0] == 'c') {
 				bool corr = correction_on.load(std::memory_order_relaxed);
 				correction_on.store(!corr, std::memory_order_release);
-				prompt_input(!corr);
+				std::cerr << (corr ? "Corrections off.\n" : "Corrections on.\n");
 			} else if (str[0] == 'q') {
 				return 0;
 			}

@@ -1,3 +1,5 @@
+#include <pthread.h>
+#include <sched.h>
 #include <unistd.h>
 #include <array>
 #include <cstdint>
@@ -22,6 +24,10 @@ void play_samples(void const *samples, size_t len);
 void initialize(int num_ch, int byte_dp, uint32_t sample_rate, size_t batch_sz);
 
 int main() {
+	auto const policy = SCHED_RR;
+	sched_param const param{(sched_get_priority_max(policy) + sched_get_priority_min(policy)) / 2};
+	pthread_setschedparam(pthread_self(), policy, &param);
+
 	initialize(num_channels, byte_depth, samples_per_s, packet_samples);
 	wav_header_t header(num_channels, samples_per_s, byte_depth);
 	wav_writer_t<sample_t> outp("outp.wav", header);
@@ -47,8 +53,7 @@ int main() {
 	}
 
 	int rval;
-	while ((rval = read(msgsock, samples, 10 * sizeof samples[0])) >
-	       0) {
+	while ((rval = read(msgsock, samples, 10 * sizeof samples[0])) > 0) {
 		int const num_samples = rval / sizeof samples[0];
 		if (num_samples * sizeof samples[0] != rval)
 			break;
