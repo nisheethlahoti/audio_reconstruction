@@ -4,7 +4,7 @@ DEPS=$(OBJS:.o=.d)
 
 CC=g++
 CXXFLAGS=-std=gnu++1z -Ofast -flto -MMD -MP
-LDLIBS=-lpcap -lasound
+LDLIBS=-lpcap
 LDFLAGS=-pthread $(CXXFLAGS)
 
 all: out out/callbacks
