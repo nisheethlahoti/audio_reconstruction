@@ -25,7 +25,10 @@ static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
 void play_samples(void const *samples, size_t len) {
 	snd_pcm_sframes_t frames = snd_pcm_writei(handle, samples, len);
 
-	if (frames < 0) {
+	if (frames == -EPIPE) {
+		cerr << "Recovering from broken pipe.\n";
+		snd_pcm_prepare(handle);
+	} else if (frames < 0) {
 		cerr << "snd_pcm_writei failed: " << snd_strerror(frames) << endl;
 	} else if (frames < len) {
 		cerr << "Short write (expected " << len << ", wrote " << frames << ')'

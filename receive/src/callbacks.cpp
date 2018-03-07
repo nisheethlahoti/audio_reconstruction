@@ -126,14 +126,9 @@ void playing_loop(logger_t &logger) {
 			mergewrite_samples(start, start);
 			logger.log(repeat_play_log(start->num));
 		} else {
+			static constexpr array<sample_t, packet_samples> zeroes{};
 			logger.log(reader_waiting_log());
-			int bdiff = 0;
-			do {
-				this_thread::sleep_until(time += duration);
-				bdiff = b_end.load(memory_order_consume) - next;
-				if (bdiff < 0)
-					bdiff += batches.size();
-			} while (bdiff < batches.size() / 2);
+			write_samples(zeroes.data(), zeroes.size());
 		}
 	}
 }
