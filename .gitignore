@@ -2,8 +2,6 @@ send_song
 receive/out
 receive/logs
 receive/parse/readlog
-receive/sockreceive/record
-receive/sockreceive/play
 **/*.o
 **/*.d
 **/*.wav

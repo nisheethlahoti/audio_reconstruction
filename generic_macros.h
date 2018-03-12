@@ -12,8 +12,7 @@
 #define STRING_I(X) #X
 #define STRING(X) STRING_I(X)
 
-#define FOLDR(FN, JOIN, ...) \
-	CONCAT(FOLDR_, NUMARGS(__VA_ARGS__))(FN, JOIN, __VA_ARGS__)
+#define FOLDR(FN, JOIN, ...) CONCAT(FOLDR_, NUMARGS(__VA_ARGS__))(FN, JOIN, __VA_ARGS__)
 #define FOLDR_0(FN, JOIN, ...)
 #define FOLDR_1(FN, JOIN, X, ...) FN(X)
 #define FOLDR_2(FN, JOIN, X, ...) JOIN(FN(X), FOLDR_1(FN, JOIN, __VA_ARGS__))

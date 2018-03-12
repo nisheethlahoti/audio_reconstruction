@@ -42,6 +42,10 @@ static inline void set_scheduling(pthread_t packet, pthread_t play) {
 	pthread_setschedparam(play, policy, &playparam);
 }
 
+void write_samples(void const *samples, size_t len) {
+	std::cout.write(static_cast<char const *>(samples), len * sizeof sample_t());
+}
+
 int main(int argc, char **argv) {
 	std::vector<capture_t> captures;
 	multiplexer_t multiplexer;
@@ -62,10 +66,10 @@ int main(int argc, char **argv) {
 	logger_t playlogger("play.bin"), packetlogger("packet.bin");
 	std::thread player(playing_loop, std::ref(playlogger));
 	set_scheduling(pthread_self(), player.native_handle());
-
-	initialize_player();
 	player.detach();
 
+	std::ios::sync_with_stdio(false);
+	std::cout.setf(std::ios::unitbuf);  // Making cout unbuffered
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";
 
