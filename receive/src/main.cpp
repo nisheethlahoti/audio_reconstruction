@@ -34,9 +34,9 @@ class multiplexer_t {
 };
 
 static inline void set_scheduling(pthread_t packet, pthread_t play) {
-	constexpr auto policy = SCHED_RR;
+	constexpr auto policy = SCHED_FIFO;
 	auto const maxpr = sched_get_priority_max(policy), minpr = sched_get_priority_min(policy);
-	sched_param const packetparam{(maxpr + 2 * minpr) / 3}, playparam{(2 * maxpr + minpr) / 3};
+	sched_param const packetparam{(maxpr + 2 * minpr) / 3}, playparam{(maxpr + minpr) / 2};
 
 	pthread_setschedparam(packet, policy, &packetparam);
 	pthread_setschedparam(play, policy, &playparam);
