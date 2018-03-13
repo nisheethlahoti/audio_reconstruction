@@ -84,11 +84,10 @@ struct wav_song {
 
 	int32_t value(int const pos, int const channel) const {
 		int32_t ret = 0;
-		uint8_t const *const ptr =
-		    chunk.data + input_depth * (input_channels * pos + channel);
+		uint8_t const *const ptr = chunk.data + input_depth * (input_channels * pos + channel);
 		for (int i = 0; i < input_depth; ++i)
 			ret |= static_cast<uint32_t>(ptr[i]) << (8 * i);
-		ret = (ret << (4-input_depth)) >> (4-input_depth);
+		ret = (ret << (4 - input_depth)) >> (4 - input_depth);
 		return ret;
 	}
 } song("filename.wav");
@@ -99,9 +98,7 @@ void copy_and_shift(iterator begin, iterator end, uint8_t *&loc) {
 	loc += end - begin;
 }
 
-int32_t shift(int32_t ret, int amount) {
-	return amount > 0 ? (ret << amount) : (ret >> (-amount));
-}
+int32_t shift(int32_t ret, int amount) { return amount > 0 ? (ret << amount) : (ret >> (-amount)); }
 
 size_t song_pos = 0;
 uint8_t *fill_packet(uint8_t *pos) {
@@ -113,12 +110,11 @@ uint8_t *fill_packet(uint8_t *pos) {
 
 	for (int i = 0; i < total_samples; ++i) {
 		for (int t = 0; t < num_channels; ++t) {
-			int32_t val = shift(
-			    song.value(song_pos, t),
-			    8 * (byte_depth - input_depth));  // Converting 16 bit to required size.
+			int32_t val =
+			    shift(song.value(song_pos, t),
+			          8 * (byte_depth - input_depth));  // Converting 16 bit to required size.
 			for (int j = 0; j < byte_depth; ++j) {
-				pos[byte_depth * num_channels * i + t * byte_depth + j] =
-				    (val >> (8 * j)) & 0xff;
+				pos[byte_depth * num_channels * i + t * byte_depth + j] = (val >> (8 * j)) & 0xff;
 			}
 		}
 		song_pos++;
@@ -136,8 +132,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	default_random_engine gen(12345);
-	bernoulli_distribution dist(atof(argv[1]));
+	default_random_engine gen(12345), gen2(54321);
+	bernoulli_distribution drop(atof(argv[1])), putback(atof(argv[2])/atof(argv[1]));
 
 	uint8_t buf[2000];
 	uint8_t *packet_loc = buf;
@@ -156,7 +152,7 @@ int main(int argc, char **argv) {
 
 		uint8_t *endptr = fill_packet(packet_loc);
 		this_thread::sleep_until(time += duration);
-		if (!dist(gen))
+		if (!drop(gen) || putback(gen2) || itr == 0)
 			receive_callback(buf, endptr - buf);
 	}
 	return 0;

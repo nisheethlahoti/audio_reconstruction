@@ -164,15 +164,27 @@ static void mergewrite_samples(b_const_itr const first,
 
 void playing_loop(chrono::time_point<chrono::steady_clock> time) {
 	static int further_repeat = 0;
+	static int tick = 0;
+	static bool dealt_with_tick = false;
 	while (true) {
 		this_thread::sleep_until(time += duration);
 		b_itr const start = b_begin.load(memory_order_relaxed);
 		b_itr const next =
 		    start == batches.end() - 1 ? batches.begin() : start + 1;
-		if (b_end.load(memory_order_consume) != next) {
+		if (tick != 0) {
+			--tick;
+			mergewrite_samples(start, start);
+		} else if (b_end.load(memory_order_consume) != next) {
 			further_repeat = max_repeat;
-			mergewrite_samples(start, next);
-			b_begin.store(next, memory_order_release);
+			if (false) { //(!dealt_with_tick && next->num > start->num+1) {
+				tick = next->num - start->num - 2;
+				mergewrite_samples(start, start);
+				dealt_with_tick = true;
+			} else {
+				mergewrite_samples(start, next);
+				b_begin.store(next, memory_order_release);
+				dealt_with_tick = false;
+			}
 			log(playing_log(next->num));
 		} else if (further_repeat) {
 			--further_repeat;
