@@ -4,13 +4,10 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <fstream>
 
 #include "../../magic_number.h"
 #include "logger.h"
 
-// Length at beginning of packet that is  useless.
-// (Due to MAC header, right now.)
 constexpr size_t max_buf_size = 3;
 constexpr std::chrono::milliseconds max_play_at_end(50);
 constexpr std::chrono::microseconds duration(packet_samples * 1000000ull / samples_per_s);
