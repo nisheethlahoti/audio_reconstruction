@@ -22,7 +22,7 @@ typedef std::array<mono_sample_t, num_channels> sample_t;
 
 struct raw_packet_t {
 	uint8_t const *data;
-	size_t size;
+	ssize_t size;
 };
 
 struct batch_t {

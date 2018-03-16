@@ -40,29 +40,28 @@ static inline bool write_packet(uint8_t const *packet, uint32_t pnum, logger_t &
 	}
 }
 
-bool receive_callback(raw_packet_t packet, logger_t &logger) {
-	uint8_t const *startpos = packet.data + useless_length;
+bool receive_callback(raw_packet_t const packet, logger_t &logger) {
 	if (packet.size != packet_size) {
-		logger.log(invalid_size_log(static_cast<uint16_t>(packet.size)));
+		logger.log(invalid_size_log(packet.size));
 		return false;
 	}
 
 	array<uint8_t, 4> xor_val = magic_number;
 	for (int i = 0; i < 4; ++i) {
-		xor_val[i] ^= startpos[i] ^ startpos[i + 4] ^ startpos[i + 8];
+		xor_val[i] ^= packet.data[i] ^ packet.data[i + 4] ^ packet.data[i + 8];
 	}
 
 	if (xor_val != array<uint8_t, 4>()) {
-		logger.log(invalid_magic_number_log(get_little_endian(startpos)));
+		logger.log(invalid_magic_number_log(get_little_endian(packet.data)));
 		return false;
 	}
 
-	if (!equal(uid.begin(), uid.end(), startpos)) {
-		logger.log(invalid_uid_log(get_little_endian(startpos)));
+	if (!equal(uid.begin(), uid.end(), packet.data)) {
+		logger.log(invalid_uid_log(get_little_endian(packet.data)));
 		return false;
 	}
 
-	uint32_t packet_number = get_little_endian(uid.size() + startpos);
+	uint32_t packet_number = get_little_endian(uid.size() + packet.data);
 	if (packet_number < latest_packet_number) {
 		logger.log(older_packet_log(latest_packet_number, packet_number));
 		return true;
@@ -75,7 +74,7 @@ bool receive_callback(raw_packet_t packet, logger_t &logger) {
 
 	latest_packet_number = packet_number;
 	logger.log(validated_log());
-	write_packet(startpos + 12, packet_number, logger);
+	write_packet(packet.data + 12, packet_number, logger);
 	return true;
 }
 

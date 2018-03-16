@@ -1,4 +1,4 @@
-LOG_TYPE(1, invalid_size, (uint16_t, received))
+LOG_TYPE(1, invalid_size, (int16_t, received))
 LOG_TYPE(2, invalid_magic_number, (uint32_t, received))
 LOG_TYPE(3, invalid_crc, (uint32_t, expected), (uint32_t, received))
 LOG_TYPE(4, invalid_uid, (uint32_t, received))

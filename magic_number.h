@@ -8,6 +8,4 @@ constexpr size_t byte_depth = 2, num_channels = 1;
 constexpr int max_redundancy = 20;
 
 constexpr size_t total_samples = packet_samples + trailing_samples;
-constexpr size_t useless_length = 32;  // Mac header length
-constexpr size_t packet_size = byte_depth * num_channels * total_samples + useless_length +
-                               magic_number.size() + uid.size() + 4 /*packet number*/;
+constexpr size_t packet_size = byte_depth * num_channels * total_samples + 12;

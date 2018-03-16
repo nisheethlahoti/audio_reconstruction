@@ -60,8 +60,8 @@ raw_packet_t capture_t::get_packet() {
 		exit(1);
 	}
 
-	size_t radiotap_len = packet[2] | size_t(packet[3]) << 8;
-	return raw_packet_t{packet + radiotap_len, header.caplen - radiotap_len};
+	uint32_t header_len = 32u /*mac*/ + (packet[2] | uint32_t(packet[3]) << 8) /*radiotap*/;
+	return raw_packet_t{packet + header_len, ssize_t(header.caplen) - ssize_t(header_len)};
 }
 
 capture_t::~capture_t() {
