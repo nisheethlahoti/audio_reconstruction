@@ -38,7 +38,6 @@ static inline void report_drops() {
 }
 
 static inline void playing_loop() {
-	set_realtime(1, 1);
 	auto time = std::chrono::steady_clock::now();
 	while (std::cin) {
 		std::this_thread::sleep_until(time += duration);
@@ -52,8 +51,8 @@ int main(int argc, char **argv) {
 	for (capture_t const &cap : captures)
 		multiplexer.add_fd(cap.fd());
 
+	set_realtime();
 	std::thread player(playing_loop);
-	set_realtime(1, 2);
 
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";

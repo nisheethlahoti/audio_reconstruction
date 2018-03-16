@@ -36,8 +36,7 @@ static void play_samples(size_t const len) {
 }
 
 int main() {
-	std::ios::sync_with_stdio(false);
-	set_realtime(2, 1);
+	set_realtime();
 
 	int err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {

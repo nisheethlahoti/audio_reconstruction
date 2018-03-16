@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	std::copy(uid.begin(), uid.end(), buf.begin());
 	uint8_t *const packet_loc = buf.data() + uid.size();
 
-	set_realtime(1, 1);
+	set_realtime();
 	for (int itr = 0; std::cin; ++itr) {
 		if (itr % 1000 == 0)
 			std::cerr << "Sending next thousand packets\n";

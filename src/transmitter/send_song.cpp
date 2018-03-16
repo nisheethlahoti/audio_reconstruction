@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	set_realtime(1, 1);
+	set_realtime();
 	while (std::cin.read(reinterpret_cast<char *>(packet_loc), packet_size)) {
 		for (int i = 0; i < redundancy; ++i) {
 			for (auto pcap : pcaps)
