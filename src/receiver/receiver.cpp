@@ -3,31 +3,25 @@
 #include <atomic>
 #include <cstring>
 
-#include "receive.h"
+#include <receiver/receiver.h>
+#include <receiver/platform_callbacks.h>
 
 using namespace std;
-typedef array<uint8_t, packet_size> packet_t;
-
-static uint32_t latest_packet_number = 0;
-atomic<bool> correction_on(true);
-
-static array<batch_t, max_buf_size + 1> batches;
-typedef decltype(batches)::iterator b_itr;
-typedef decltype(batches)::const_iterator b_const_itr;
-static atomic<b_itr> b_begin(batches.begin()), b_end(batches.begin() + 1);
 
 static inline uint32_t get_little_endian(uint8_t const *bytes) {
-	uint32_t ret = 0;
-	for (int i = 0; i < 4; ++i) {
-		ret = ret | bytes[i] << (8 * i);
-	}
-	return ret;
+	return bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24;
 }
 
-static inline bool write_packet(uint8_t const *packet, uint32_t pnum, logger_t &logger) {
+inline static int32_t get_int_sample(mono_sample_t const &smpl) {
+	int32_t ret;
+	memcpy(reinterpret_cast<uint8_t *>(&ret) + (4 - sizeof smpl), &smpl, sizeof smpl);
+	return ret >> (8 * (4 - sizeof smpl));
+}
+
+bool receiver_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	b_itr const finish = b_end.load(memory_order_relaxed);
 	if (b_begin.load(memory_order_consume) == finish) {
-		logger.log(full_buffer_log(pnum));
+		packet_log(full_buffer_log(pnum));
 		return false;
 	} else {
 		finish->num = pnum;
@@ -35,14 +29,14 @@ static inline bool write_packet(uint8_t const *packet, uint32_t pnum, logger_t &
 		memcpy(finish->trailing.data(), packet + sizeof finish->samples, sizeof finish->trailing);
 		b_end.store(finish == batches.end() - 1 ? batches.begin() : finish + 1,
 		            memory_order_release);
-		logger.log(success_log(pnum));
+		packet_log(success_log(pnum));
 		return true;
 	}
 }
 
-bool receive_callback(raw_packet_t const packet, logger_t &logger) {
+bool receiver_t::receive_callback(raw_packet_t const packet) {
 	if (packet.size != packet_size) {
-		logger.log(invalid_size_log(packet.size));
+		packet_log(invalid_size_log(packet.size));
 		return false;
 	}
 
@@ -52,39 +46,33 @@ bool receive_callback(raw_packet_t const packet, logger_t &logger) {
 	}
 
 	if (xor_val != array<uint8_t, 4>()) {
-		logger.log(invalid_magic_number_log(get_little_endian(packet.data)));
+		packet_log(invalid_magic_number_log(get_little_endian(packet.data)));
 		return false;
 	}
 
 	if (!equal(uid.begin(), uid.end(), packet.data)) {
-		logger.log(invalid_uid_log(get_little_endian(packet.data)));
+		packet_log(invalid_uid_log(get_little_endian(packet.data)));
 		return false;
 	}
 
 	uint32_t packet_number = get_little_endian(uid.size() + packet.data);
 	if (packet_number < latest_packet_number) {
-		logger.log(older_packet_log(latest_packet_number, packet_number));
+		packet_log(older_packet_log(latest_packet_number, packet_number));
 		return true;
 	}
 
 	if (packet_number == latest_packet_number) {
-		logger.log(repeated_packet_log(packet_number));
+		packet_log(repeated_packet_log(packet_number));
 		return true;
 	}
 
 	latest_packet_number = packet_number;
-	logger.log(validated_log());
-	write_packet(packet.data + 12, packet_number, logger);
+	packet_log(validated_log());
+	write_packet(packet.data + 12, packet_number);
 	return true;
 }
 
-inline static int32_t get_int_sample(mono_sample_t const &smpl) {
-	int32_t ret;
-	memcpy(reinterpret_cast<uint8_t *>(&ret) + (4 - sizeof smpl), &smpl, sizeof smpl);
-	return ret >> (8 * (4 - sizeof smpl));
-}
-
-static void mergewrite_samples(b_const_itr const first, b_const_itr const second) {
+void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) {
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
@@ -104,7 +92,7 @@ static void mergewrite_samples(b_const_itr const first, b_const_itr const second
 	}
 }
 
-void play_next(logger_t &logger) {
+void receiver_t::play_next() {
 	static int further_repeat = 0;
 	b_itr const start = b_begin.load(memory_order_relaxed);
 	b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
@@ -113,14 +101,20 @@ void play_next(logger_t &logger) {
 		further_repeat = max_repeat;
 		mergewrite_samples(start, next);
 		b_begin.store(next, memory_order_release);
-		logger.log(playing_log(next->num));
+		play_log(playing_log(next->num));
 	} else if (further_repeat) {
 		--further_repeat;
 		mergewrite_samples(start, start);
-		logger.log(repeat_play_log(start->num));
+		play_log(repeat_play_log(start->num));
 	} else {
 		static constexpr array<sample_t, packet_samples> zeroes{};
-		logger.log(reader_waiting_log());
+		play_log(reader_waiting_log());
 		write_samples(zeroes.data(), zeroes.size());
 	}
+}
+
+bool receiver_t::toggle_corrections() {
+	bool corr = correction_on.load(std::memory_order_relaxed);
+	correction_on.store(!corr, std::memory_order_release);
+	return !corr;
 }

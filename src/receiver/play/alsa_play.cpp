@@ -1,8 +1,8 @@
 #include <alsa/asoundlib.h>
 #include <iostream>
 
-#include "../src/receive.h"
-#include "../../realtime.h"
+#include <realtime.h>
+#include <receiver/constants.h>
 
 static constexpr size_t num_samples = packet_samples;
 static constexpr size_t fill_samples = packet_samples / 2;

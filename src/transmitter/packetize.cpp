@@ -2,8 +2,8 @@
 #include <array>
 #include <iostream>
 
-#include "magic_number.h"
-#include "realtime.h"
+#include <constants.h>
+#include <realtime.h>
 
 uint32_t packet_num = 1;
 
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 	std::array<uint8_t, packet_size> buf;
 
 	std::copy(uid.begin(), uid.end(), buf.begin());
-	uint8_t * const packet_loc = buf.data() + uid.size();
+	uint8_t *const packet_loc = buf.data() + uid.size();
 
 	set_realtime(1, 1);
 	for (int itr = 0; std::cin; ++itr) {

@@ -2,7 +2,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "capture.h"
+#include <receiver/unix/capture.h>
 
 int capture_t::fd() const { return fd_; }
 char const *capture_t::name() const { return name_; }

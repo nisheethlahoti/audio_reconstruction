@@ -1,11 +1,1 @@
-send_song
-packetize
-receive/out
-receive/logs
-receive/parse/readlog
-**/*.o
-**/*.d
-**/*.wav
-**/*.pcm
-**/*.bin
-**/*.log
+out/

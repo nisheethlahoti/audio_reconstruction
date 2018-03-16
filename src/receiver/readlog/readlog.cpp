@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../src/logger.h"
+#include <receiver/logtypes.h>
 
 using namespace std;
 
@@ -46,7 +46,7 @@ int main() {
 		cout << curr_time << ' ';
 
 		switch (cin.get()) {
-#include "../src/loglist.h"
+#include <receiver/loglist.h>
 		}
 	}
 	return 0;

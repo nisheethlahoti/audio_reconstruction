@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-#include "magic_number.h"
-#include "realtime.h"
+#include <constants.h>
+#include <realtime.h>
 
 constexpr std::array<uint8_t, 24> const radiotap_hdr = {{
     /*0*/ 0x00, 0x00,  // radiotap version (ignore this)

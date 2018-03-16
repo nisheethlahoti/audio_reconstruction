@@ -1,18 +1,44 @@
-CC=g++
-CXXFLAGS=-std=gnu++1z -O2 -MMD -MP
-send_song: LDLIBS=-lpcap
+rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
+objects=$(patsubst src/%.cpp, out/%.o, $(wildcard src/$1/*.cpp))
 
-all: send_song packetize
+DEPS=$(patsubst src/%.cpp, out/%.d, $(call rwildcard,src/,*.cpp))
+RECV_TARGETS=out/receive out/alsa_play out/readlog
+TRSM_TARGETS=out/transmit out/packetize
 
-send_song:send_song.o realtime.o
+CXX=g++
+COMMONFLAGS=-std=gnu++1z -Ofast -flto
+CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
+LDFLAGS=-pthread $(COMMONFLAGS)
 
-packetize: packetize.o realtime.o
+all:
+	@echo "Please specify which target to build: receiver transmitter $(RECV_TARGETS) $(TRSM_TARGETS)"
 
--include send_song.d
--include packetize.d
--include realtime.d
+out/receive: LDLIBS=-lpcap
+out/receive: $(call objects,receiver) $(call objects,receiver/unix) out/realtime.o
+
+out/alsa_play: LDLIBS=-lasound
+out/alsa_play: out/receiver/play/alsa_play.o out/realtime.o
+
+out/readlog: out/receiver/logtypes.o out/receiver/readlog/readlog.o
+
+out/transmit: LDLIBS=-lpcap
+out/transmit: out/transmitter/send_song.o out/realtime.o
+
+out/packetize: out/transmitter/packetize.o out/realtime.o
+
+$(RECV_TARGETS) $(TRSM_TARGETS):
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+receiver: $(RECV_TARGETS)
+transmitter: $(TRSM_TARGETS)
+
+out/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+-include $(DEPS)
 
 clean:
-	rm -f *.o *.d send_song packetize
+	rm -rf out/
 
-.PHONY: all clean
+.PHONY: all clean receiver transmitter

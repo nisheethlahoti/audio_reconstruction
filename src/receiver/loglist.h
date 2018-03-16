@@ -1,3 +1,4 @@
+#ifdef LOG_TYPE
 LOG_TYPE(1, invalid_size, (int16_t, received))
 LOG_TYPE(2, invalid_magic_number, (uint32_t, received))
 LOG_TYPE(3, invalid_crc, (uint32_t, expected), (uint32_t, received))
@@ -15,3 +16,5 @@ LOG_TYPE(14, validated)
 LOG_TYPE(15, playing, (uint32_t, packet))
 LOG_TYPE(16, repeat_play, (uint32_t, packet))
 LOG_TYPE(17, deferred_writing)
+#undef LOG_TYPE
+#endif

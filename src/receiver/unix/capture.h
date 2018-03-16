@@ -1,6 +1,7 @@
 #include <net/if.h>
 #include <pcap.h>
-#include "receive.h"
+
+#include <receiver/constants.h>
 
 class capture_t {
 	pcap_t *pcap;
