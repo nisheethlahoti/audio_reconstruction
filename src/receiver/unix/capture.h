@@ -1,7 +1,7 @@
 #include <net/if.h>
 #include <pcap.h>
 
-#include <receiver/constants.h>
+#include <constants.h>
 
 class capture_t {
 	pcap_t *pcap;
@@ -16,7 +16,7 @@ class capture_t {
 
 	int fd() const;
 	char const *name() const;
-	raw_packet_t get_packet();
+	slice_t get_packet();
 
 	void addrecv();
 	unsigned int getrecv();

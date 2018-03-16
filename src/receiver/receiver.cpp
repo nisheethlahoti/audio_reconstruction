@@ -37,7 +37,7 @@ bool receiver_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	}
 }
 
-bool receiver_t::receive_callback(raw_packet_t const packet) {
+bool receiver_t::receive_callback(slice_t const packet) {
 	if (packet.size != packet_size) {
 		packet_log(invalid_size_log(packet.size));
 		return false;

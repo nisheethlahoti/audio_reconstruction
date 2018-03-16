@@ -1,3 +1,6 @@
+#ifndef SOUNDREX_CONSTANTS
+#define SOUNDREX_CONSTANTS
+
 #include <array>
 #include <chrono>
 
@@ -14,3 +17,11 @@ constexpr std::chrono::microseconds duration(packet_samples * 1000000ull / sampl
 
 typedef std::array<uint8_t, byte_depth> mono_sample_t;
 typedef std::array<mono_sample_t, num_channels> sample_t;
+
+// Where negative size values represent error condition
+struct slice_t {
+	uint8_t const *data;
+	ssize_t size;
+};
+
+#endif

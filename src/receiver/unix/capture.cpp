@@ -52,7 +52,7 @@ capture_t::capture_t(capture_t &&other) {
 	other.pcap = nullptr;
 }
 
-raw_packet_t capture_t::get_packet() {
+slice_t capture_t::get_packet() {
 	pcap_pkthdr header;
 	uint8_t const *packet = pcap_next(pcap, &header);
 	if (packet == nullptr) {
@@ -61,7 +61,7 @@ raw_packet_t capture_t::get_packet() {
 	}
 
 	uint32_t header_len = 32u /*mac*/ + (packet[2] | uint32_t(packet[3]) << 8) /*radiotap*/;
-	return raw_packet_t{packet + header_len, ssize_t(header.caplen) - ssize_t(header_len)};
+	return slice_t{packet + header_len, ssize_t(header.caplen) - ssize_t(header_len)};
 }
 
 capture_t::~capture_t() {

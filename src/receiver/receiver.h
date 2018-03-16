@@ -1,6 +1,6 @@
 #include <atomic>
 
-#include <receiver/constants.h>
+#include <constants.h>
 
 struct batch_t {
 	uint32_t num;
@@ -25,7 +25,7 @@ class receiver_t {
 	void mergewrite_samples(b_const_itr first, b_const_itr second);
 
    public:
-	bool receive_callback(raw_packet_t packet); // Returns if the packet was valid
+	bool receive_callback(slice_t packet);  // Returns whether packet is SoundRex packet
 	void play_next();
-	bool toggle_corrections(); // Returns if corrections are now on.
+	bool toggle_corrections();  // Returns whether corrections are now on.
 };
