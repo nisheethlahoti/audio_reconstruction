@@ -1,9 +1,8 @@
 #include <alsa/asoundlib.h>
-#include <pthread.h>
-#include <sched.h>
 #include <iostream>
 
 #include "../src/receive.h"
+#include "../../realtime.h"
 
 static constexpr size_t num_samples = packet_samples;
 static constexpr size_t fill_samples = packet_samples / 2;
@@ -38,12 +37,7 @@ static void play_samples(size_t const len) {
 
 int main() {
 	std::ios::sync_with_stdio(false);
-	std::cin.setf(std::ios::unitbuf);
-
-	auto const policy = SCHED_FIFO;
-	auto const maxpr = sched_get_priority_max(policy), minpr = sched_get_priority_min(policy);
-	sched_param const param{(2 * maxpr + minpr) / 3};
-	pthread_setschedparam(pthread_self(), policy, &param);
+	set_realtime(2, 1);
 
 	int err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {

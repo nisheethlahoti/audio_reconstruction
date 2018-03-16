@@ -1,16 +1,23 @@
 SRCS=$(wildcard src/*.cpp)
-OBJS=$(patsubst src/%.cpp, out/%.o, $(SRCS))
+OBJS=$(patsubst src/%.cpp, out/%.o, $(SRCS)) ../realtime.o
 DEPS=$(OBJS:.o=.d)
 
 CC=g++
 CXXFLAGS=-std=gnu++1z -Ofast -flto
 MFLAGS=-MMD -MP
-LDLIBS=-lpcap
+out/callbacks: LDLIBS=-lpcap
+out/play: LDLIBS=-lasound
 LDFLAGS=-pthread $(CXXFLAGS)
 
 all: out out/callbacks out/play
 
 out/callbacks: $(OBJS)
+
+../realtime.o: ../realtime.cpp
+	$(CC) $(CXXFLAGS) $(MFLAGS) -c $< -o $@
+
+out/play.o: play/alsa_play.cpp
+	$(CC) $(CXXFLAGS) $(MFLAGS) -c $< -o $@
 
 out/%.o: src/%.cpp
 	$(CC) $(CXXFLAGS) $(MFLAGS) -c $< -o $@
@@ -18,8 +25,7 @@ out/%.o: src/%.cpp
 out:
 	mkdir -p out/
 
-out/play: play/alsa_play.cpp
-	$(CC) $(CXXFLAGS) $(MFLAGS) $< -o $@ -lasound
+out/play: out/play.o ../realtime.o
 
 -include $(DEPS)
 -include out/play.d

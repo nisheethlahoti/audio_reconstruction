@@ -2,9 +2,6 @@
 #include <array>
 #include <atomic>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <thread>
 
 #include "receive.h"
 
@@ -14,7 +11,7 @@ typedef array<uint8_t, packet_size> packet_t;
 static uint32_t latest_packet_number = 0;
 atomic<bool> correction_on(true);
 
-array<batch_t, max_buf_size + 1> batches;
+static array<batch_t, max_buf_size + 1> batches;
 typedef decltype(batches)::iterator b_itr;
 typedef decltype(batches)::const_iterator b_const_itr;
 static atomic<b_itr> b_begin(batches.begin()), b_end(batches.begin() + 1);
@@ -108,27 +105,23 @@ static void mergewrite_samples(b_const_itr const first, b_const_itr const second
 	}
 }
 
-void playing_loop(logger_t &logger) {
-	int further_repeat = 0;
-	auto time = chrono::steady_clock::now();
-	while (true) {
-		this_thread::sleep_until(time += duration);
-		b_itr const start = b_begin.load(memory_order_relaxed);
-		b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
+void play_next(logger_t &logger) {
+	static int further_repeat = 0;
+	b_itr const start = b_begin.load(memory_order_relaxed);
+	b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
 
-		if (b_end.load(memory_order_acquire) != next) {
-			further_repeat = max_repeat;
-			mergewrite_samples(start, next);
-			b_begin.store(next, memory_order_release);
-			logger.log(playing_log(next->num));
-		} else if (further_repeat) {
-			--further_repeat;
-			mergewrite_samples(start, start);
-			logger.log(repeat_play_log(start->num));
-		} else {
-			static constexpr array<sample_t, packet_samples> zeroes{};
-			logger.log(reader_waiting_log());
-			write_samples(zeroes.data(), zeroes.size());
-		}
+	if (b_end.load(memory_order_acquire) != next) {
+		further_repeat = max_repeat;
+		mergewrite_samples(start, next);
+		b_begin.store(next, memory_order_release);
+		logger.log(playing_log(next->num));
+	} else if (further_repeat) {
+		--further_repeat;
+		mergewrite_samples(start, start);
+		logger.log(repeat_play_log(start->num));
+	} else {
+		static constexpr array<sample_t, packet_samples> zeroes{};
+		logger.log(reader_waiting_log());
+		write_samples(zeroes.data(), zeroes.size());
 	}
 }
