@@ -3,10 +3,13 @@
 #include <atomic>
 #include <cstring>
 
-#include <receiver/receiver.h>
 #include <receiver/platform_callbacks.h>
+#include <receiver/receiver.h>
 
 using namespace std;
+
+static constexpr chrono::milliseconds max_play_at_end(50);
+static constexpr int max_repeat = max_play_at_end / duration;
 
 static inline uint32_t get_little_endian(uint8_t const *bytes) {
 	return bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24;
