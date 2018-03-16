@@ -14,13 +14,13 @@ all:
 	@echo "Please specify which target to build: receiver transmitter $(RECV_TARGETS) $(TRSM_TARGETS)"
 
 out/receive: LDLIBS=-lpcap
-out/receive: $(call objects,receiver) $(call objects,receiver/unix) out/realtime.o
+out/receive: $(call objects,receiver) $(call objects,receiver/unix) out/realtime.o out/unix/capture.o
 
 out/alsa_play: LDLIBS=-lasound
 out/alsa_play: out/receiver/play/alsa_play.o out/realtime.o
 
 out/transmit: LDLIBS=-lpcap
-out/transmit: out/transmitter/send_song.o out/realtime.o
+out/transmit: out/transmitter/send_song.o out/realtime.o out/unix/capture.o
 
 out/readlog: out/receiver/logtypes.o out/receiver/readlog/readlog.o
 out/packetize: out/transmitter/packetize.o out/realtime.o

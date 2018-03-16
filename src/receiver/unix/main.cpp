@@ -5,25 +5,13 @@
 
 #include <realtime.h>
 #include <receiver/receiver.h>
-#include <receiver/unix/capture.h>
 #include <receiver/unix/multiplexer.h>
+#include <unix/capture.h>
 
-static std::vector<capture_t> captures;
 static multiplexer_t multiplexer;
 static receiver_t receiver;
 
-static inline void open_captures(int num, char **names) {
-	captures.reserve(num);
-	for (int i = 0; i < num; ++i) {
-		captures.emplace_back(names[i]);
-		if (captures.back().fd() == -1)
-			captures.pop_back();
-	}
-
-	std::cerr << captures.size() << " interfaces opened for capture." << std::endl;
-}
-
-static inline void report_drops() {
+static inline void report_drops(std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();
 	auto curr = std::chrono::steady_clock::now();
 	auto tdiff = std::chrono::duration_cast<std::chrono::milliseconds>(curr - time).count();
@@ -46,7 +34,8 @@ static inline void playing_loop() {
 }
 
 int main(int argc, char **argv) {
-	open_captures(argc - 1, argv + 1);
+	std::vector<capture_t> captures = open_captures(argc - 1, argv + 1);
+
 	multiplexer.add_fd(0);  // stdin
 	for (capture_t const &cap : captures)
 		multiplexer.add_fd(cap.fd());
@@ -65,7 +54,7 @@ int main(int argc, char **argv) {
 			std::cerr << (receiver.toggle_corrections() ? "Correcting\n" : "Not correcting\n");
 		}
 
-		report_drops();
+		report_drops(captures);
 		for (capture_t &cap : captures)
 			if (multiplexer.is_ready(cap.fd()))
 				if (receiver.receive_callback(cap.get_packet()))

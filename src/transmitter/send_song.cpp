@@ -2,12 +2,11 @@
 
 #include <pcap.h>
 #include <algorithm>
-#include <array>
 #include <iostream>
-#include <vector>
 
 #include <constants.h>
 #include <realtime.h>
+#include <unix/capture.h>
 
 constexpr std::array<uint8_t, 24> const radiotap_hdr = {{
     /*0*/ 0x00, 0x00,  // radiotap version (ignore this)
@@ -61,30 +60,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	/* PCAP vars */
-	char errbuf[PCAP_ERRBUF_SIZE];
-
-	std::vector<pcap_t *> pcaps;
-	for (int i = 3; i < argc; ++i) {
-		pcap_t *pcap = pcap_open_live(argv[i], 800, 1, 20, errbuf);
-		if (pcap == nullptr) {
-			std::cerr << argv[i] << ": unable to open: " << errbuf << '\n';
-		} else {
-			pcaps.push_back(pcap);
-		}
-	}
+	std::vector<capture_t> captures = open_captures(argc - 3, argv + 3);
 
 	set_realtime();
-	while (std::cin.read(reinterpret_cast<char *>(packet_loc), packet_size)) {
-		for (int i = 0; i < redundancy; ++i) {
-			for (auto pcap : pcaps)
-				if (pcap_sendpacket(pcap, buf.data(), buf.size()) != 0)
-					pcap_perror(pcap, "Failed to inject song packet");
-		}
-	}
-
-	for (auto pcap : pcaps)
-		pcap_close(pcap);
+	while (std::cin.read(reinterpret_cast<char *>(packet_loc), packet_size))
+		for (int i = 0; i < redundancy; ++i)
+			for (auto &cap : captures)
+				cap.inject(slice_t{buf.data(), buf.size()});
 
 	return 0;
 }

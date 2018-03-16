@@ -2,7 +2,7 @@
 #include <cstring>
 #include <iostream>
 
-#include <receiver/unix/capture.h>
+#include <unix/capture.h>
 
 int capture_t::fd() const { return fd_; }
 char const *capture_t::name() const { return name_; }
@@ -34,7 +34,6 @@ capture_t::capture_t(char const *iface) : recv(0) {
 	pcap_set_snaplen(pcap, packet_size + 100);
 	pcap_set_immediate_mode(pcap, 1);
 	pcap_set_rfmon(pcap, 1);
-	pcap_set_timeout(pcap, -1);
 
 	if (int ret = pcap_activate(pcap); ret) {
 		std::cerr << "Error activating: " << pcap_statustostr(ret) << std::endl;
@@ -64,7 +63,25 @@ slice_t capture_t::get_packet() {
 	return slice_t{packet + header_len, ssize_t(header.caplen) - ssize_t(header_len)};
 }
 
+void capture_t::inject(slice_t packet) {
+	if (pcap_sendpacket(pcap, packet.data, packet.size) != 0)
+		pcap_perror(pcap, "Failed to inject song packet");
+}
+
 capture_t::~capture_t() {
 	if (pcap != nullptr)
 		pcap_close(pcap);
+}
+
+std::vector<capture_t> open_captures(int num, char **names) {
+	std::vector<capture_t> captures;
+	captures.reserve(num);
+	for (int i = 0; i < num; ++i) {
+		captures.emplace_back(names[i]);
+		if (captures.back().fd() == -1)
+			captures.pop_back();
+	}
+
+	std::cerr << captures.size() << " interfaces opened for capture." << std::endl;
+	return captures;
 }

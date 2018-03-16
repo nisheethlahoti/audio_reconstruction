@@ -1,5 +1,6 @@
 #include <net/if.h>
 #include <pcap.h>
+#include <vector>
 
 #include <constants.h>
 
@@ -16,8 +17,12 @@ class capture_t {
 
 	int fd() const;
 	char const *name() const;
+
 	slice_t get_packet();
+	void inject(slice_t);
 
 	void addrecv();
 	unsigned int getrecv();
 };
+
+std::vector<capture_t> open_captures(int num, char **names);
