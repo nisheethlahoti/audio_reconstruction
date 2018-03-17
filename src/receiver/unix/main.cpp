@@ -8,15 +8,14 @@
 #include <receiver/unix/multiplexer.h>
 #include <unix/capture.h>
 
-static multiplexer_t multiplexer;
 static receiver_t receiver;
 
-static inline void report_drops(std::vector<capture_t> &captures) {
+static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();
 	auto curr = std::chrono::steady_clock::now();
 	auto tdiff = std::chrono::duration_cast<std::chrono::milliseconds>(curr - time).count();
 	if (tdiff >= 1000) {
-		double expected = samples_per_s * 3 * tdiff / 1000.0 / packet_samples;
+		double expected = samples_per_s * redundancy * tdiff / 1000.0 / packet_samples;
 		time = curr;
 		std::cerr << "Expected " << expected << " packets in " << tdiff << " ms. Dropped";
 		for (capture_t &cap : captures)
@@ -34,7 +33,14 @@ static inline void playing_loop() {
 }
 
 int main(int argc, char **argv) {
-	std::vector<capture_t> captures = open_captures(argc - 1, argv + 1);
+	int const redundancy = std::strtol(argv[1], nullptr, 10);
+	if (redundancy <= 0 || errno) {
+		std::cerr << "Usage: " << argv[0] << " <redundancy> <interfaces...>\n";
+		return 1;
+	}
+
+	multiplexer_t multiplexer;
+	std::vector<capture_t> captures = open_captures(argc - 2, argv + 2);
 
 	multiplexer.add_fd(0);  // stdin
 	for (capture_t const &cap : captures)
@@ -44,7 +50,7 @@ int main(int argc, char **argv) {
 	std::thread player(playing_loop);
 
 	std::cerr << std::fixed << std::setprecision(2);
-	std::cerr << "Enter (c) to toggle corrections and (q) to quit.\n";
+	std::cerr << "Press Enter to toggle corrections and Ctrl+d to quit\n";
 
 	while (std::cin) {
 		multiplexer.next();
@@ -54,7 +60,7 @@ int main(int argc, char **argv) {
 			std::cerr << (receiver.toggle_corrections() ? "Correcting\n" : "Not correcting\n");
 		}
 
-		report_drops(captures);
+		report_drops(redundancy, captures);
 		for (capture_t &cap : captures)
 			if (multiplexer.is_ready(cap.fd()))
 				if (receiver.receive_callback(cap.get_packet()))
