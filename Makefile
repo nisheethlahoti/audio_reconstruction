@@ -5,13 +5,12 @@ DEPS=$(patsubst src/%.cpp, out/%.d, $(call rwildcard,src/,*.cpp))
 RECV_TARGETS=out/receive out/alsa_play out/readlog
 TRSM_TARGETS=out/transmit out/packetize out/throttle
 
-CXX=g++
-COMMONFLAGS=-std=gnu++1z -Ofast -flto
+CXX=clang++
+COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
-LDFLAGS=-pthread $(COMMONFLAGS)
+LDFLAGS=$(COMMONFLAGS)
 
-all:
-	@echo "Please specify which target to build: receiver transmitter $(RECV_TARGETS) $(TRSM_TARGETS)"
+all: receiver transmitter
 
 out/receive: LDLIBS=-lpcap
 out/receive: $(call objects,receiver) $(call objects,receiver/unix) out/realtime.o out/unix/capture.o
