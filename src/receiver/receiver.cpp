@@ -12,7 +12,7 @@ static constexpr chrono::milliseconds max_play_at_end(50);
 static constexpr int max_repeat = max_play_at_end / duration;
 
 static inline uint32_t get_little_endian(uint8_t const *bytes) {
-	return bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24;
+	return bytes[0] | uint32_t(bytes[1]) << 8 | uint32_t(bytes[2]) << 16 | uint32_t(bytes[3]) << 24;
 }
 
 inline static int32_t get_int_sample(mono_sample_t const &smpl) {
@@ -37,49 +37,24 @@ bool receiver_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	}
 }
 
-bool receiver_t::receive_callback(slice_t const packet) {
-	if (packet.size != packet_size) {
-		packet_log(invalid_size_log(packet.size));
-		return false;
-	}
-
-	array<uint8_t, 4> xor_val = magic_number;
-	for (int i = 0; i < 4; ++i) {
-		xor_val[i] ^= packet.data[i] ^ packet.data[i + 4] ^ packet.data[i + 8];
-	}
-
-	if (xor_val != array<uint8_t, 4>()) {
-		packet_log(invalid_magic_number_log(get_little_endian(packet.data)));
-		return false;
-	}
-
-	if (!equal(uid.begin(), uid.end(), packet.data)) {
-		packet_log(invalid_uid_log(get_little_endian(packet.data)));
-		return false;
-	}
-
-	uint32_t packet_number = get_little_endian(uid.size() + packet.data);
+void receiver_t::receive_callback(slice_t const packet) {
+	uint32_t packet_number = get_little_endian(packet.data);
 	if (packet_number < latest_packet_number) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
-		return true;
-	}
-
-	if (packet_number == latest_packet_number) {
+	} else if (packet_number == latest_packet_number) {
 		packet_log(repeated_packet_log(packet_number));
-		return true;
+	} else {
+		latest_packet_number = packet_number;
+		packet_log(validated_log());
+		write_packet(packet.data + header_size, packet_number);
 	}
-
-	latest_packet_number = packet_number;
-	packet_log(validated_log());
-	write_packet(packet.data + 12, packet_number);
-	return true;
 }
 
 void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) {
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
-		array<sample_t, batch_t().trailing.size()> samples;
+		decltype(first->trailing) samples;
 		for (int i = 0; i < samples.size(); ++i) {
 			sample_t &smp = samples[i];
 			sample_t const &s1 = first->trailing[i], &s2 = second->samples[i];

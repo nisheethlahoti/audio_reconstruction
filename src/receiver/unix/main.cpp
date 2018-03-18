@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -32,6 +33,17 @@ static inline void playing_loop() {
 	}
 }
 
+static std::string filter_str = []() -> auto {
+	std::stringstream stream;
+	stream << std::hex << std::setw(2) << std::setfill('0') << "ether dst ";
+	for (uint16_t byte : pin)
+		stream << byte << ':';
+	stream.seekp(-1, std::ios::cur);
+	stream << " and len - radio[1:2] = " << std::dec << sizeof(packet_t) + 32;
+	return stream.str();
+}
+();
+
 int main(int argc, char **argv) {
 	int const redundancy = std::strtol(argv[1], nullptr, 10);
 	if (redundancy <= 0 || errno) {
@@ -40,11 +52,14 @@ int main(int argc, char **argv) {
 	}
 
 	multiplexer_t multiplexer;
-	std::vector<capture_t> captures = open_captures(argc - 2, argv + 2);
-
 	multiplexer.add_fd(0);  // stdin
-	for (capture_t const &cap : captures)
+
+	std::cerr << "Filter set to (" << filter_str << ")\n";
+	std::vector<capture_t> captures = open_captures(argc - 2, argv + 2);
+	for (capture_t &cap : captures) {
+		cap.setfilter(filter_str.c_str());
 		multiplexer.add_fd(cap.fd());
+	}
 
 	set_realtime();
 	std::thread player(playing_loop);
@@ -63,8 +78,7 @@ int main(int argc, char **argv) {
 		report_drops(redundancy, captures);
 		for (capture_t &cap : captures)
 			if (multiplexer.is_ready(cap.fd()))
-				if (receiver.receive_callback(cap.get_packet()))
-					cap.addrecv();
+				receiver.receive_callback(cap.get_packet());
 	}
 
 	player.join();

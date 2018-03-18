@@ -47,6 +47,9 @@ int main() {
 
 		switch (cin.get()) {
 #include <receiver/loglist.h>
+			default:
+				cout << "Unrecognized log id." << endl;
+				return 1;
 		}
 	}
 	return 0;

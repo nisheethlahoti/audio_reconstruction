@@ -21,7 +21,7 @@ class capture_t {
 	slice_t get_packet();
 	void inject(slice_t);
 
-	void addrecv();
+	void setfilter(char const *);
 	unsigned int getrecv();
 };
 

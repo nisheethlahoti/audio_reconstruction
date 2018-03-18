@@ -6,7 +6,6 @@
 
 int capture_t::fd() const { return fd_; }
 char const *capture_t::name() const { return name_; }
-void capture_t::addrecv() { ++recv; }
 
 unsigned capture_t::getrecv() {
 	auto ret = recv;
@@ -31,7 +30,7 @@ capture_t::capture_t(char const *iface) : recv(0) {
 		return;
 	}
 
-	pcap_set_snaplen(pcap, packet_size + 100);
+	pcap_set_snaplen(pcap, sizeof(packet_t) + 100);
 	pcap_set_immediate_mode(pcap, 1);
 	pcap_set_rfmon(pcap, 1);
 
@@ -52,20 +51,30 @@ capture_t::capture_t(capture_t &&other) {
 }
 
 slice_t capture_t::get_packet() {
-	pcap_pkthdr header;
-	uint8_t const *packet = pcap_next(pcap, &header);
-	if (packet == nullptr) {
-		perror("unable to obtain packet");
+	pcap_pkthdr *header;
+	u_char const *packet;
+	int ret = pcap_next_ex(pcap, &header, &packet);
+	if (ret == -1) {
+		pcap_perror(pcap, "unable to obtain packet");
 		exit(1);
 	}
 
+	++recv;
 	uint32_t header_len = 32u /*mac*/ + (packet[2] | uint32_t(packet[3]) << 8) /*radiotap*/;
-	return slice_t{packet + header_len, ssize_t(header.caplen) - ssize_t(header_len)};
+	return slice_t{packet + header_len, ssize_t(header->caplen) - ssize_t(header_len)};
 }
 
 void capture_t::inject(slice_t packet) {
 	if (pcap_sendpacket(pcap, packet.data, packet.size) != 0)
 		pcap_perror(pcap, "Failed to inject song packet");
+}
+
+void capture_t::setfilter(char const *filter) {
+	bpf_program bpf;
+	if (pcap_compile(pcap, &bpf, filter, 1, PCAP_NETMASK_UNKNOWN) || pcap_setfilter(pcap, &bpf)) {
+		pcap_perror(pcap, "Error setting filter");
+		exit(1);
+	}
 }
 
 capture_t::~capture_t() {

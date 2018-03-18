@@ -32,14 +32,14 @@ constexpr std::array<uint8_t, 24> const radiotap_hdr = {{
 }};
 
 constexpr std::array<uint8_t, 32> mac_header = {{
-    /*0*/ 0x08,  0x00,                          // Frame Control for data frame
-    /*2*/ 0x01,  0x01,                          // Duration
-    /*4*/ 0x01,  0x00, 0x5e, 0x1c, 0x04, 0x5e,  // Destination address
-    /*10*/ 0x6e, 0x40, 0x08, 0x49, 0x01, 0x64,  // Source address
-    /*16*/ 0x6e, 0x40, 0x08, 0x49, 0x01, 0x64,  // BSSID
-    /*22*/ 0x00, 0x00,                          // Seq-ctl
-    /*24*/ 0xaa, 0xaa,                          // IPLLC SNAP header
-    /*26*/ 0x03, 0x00, 0x00, 0x00, 0x08, 0x00   // SNAP field
+    /*0*/ 0x08,   0x00,                                    // Frame Control for data frame
+    /*2*/ 0x01,   0x01,                                    // Duration
+    /*4*/ pin[0], pin[1], pin[2], pin[3], pin[4], pin[5],  // Destination address
+    /*10*/ 0x6e,  0x40,   0x08,   0x49,   0x01,   0x64,    // Source address
+    /*16*/ 0x6e,  0x40,   0x08,   0x49,   0x01,   0x64,    // BSSID
+    /*22*/ 0x00,  0x00,                                    // Seq-ctl
+    /*24*/ 0xaa,  0xaa,                                    // IPLLC SNAP header
+    /*26*/ 0x03,  0x00,   0x00,   0x00,   0x08,   0x00     // SNAP field
 }};
 
 int main(int argc, char **argv) {
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + packet_size + 4> buf;
+	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
 	std::copy(radiotap_hdr.begin(), radiotap_hdr.end(), buf.begin());
 	std::copy(mac_header.begin(), mac_header.end(), buf.begin() + radiotap_hdr.size());
 	uint8_t *const packet_loc = buf.data() + radiotap_hdr.size() + mac_header.size();
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 	std::vector<capture_t> captures = open_captures(argc - 3, argv + 3);
 
 	set_realtime();
-	while (std::cin.read(reinterpret_cast<char *>(packet_loc), packet_size))
+	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
 		for (int i = 0; i < redundancy; ++i)
 			for (auto &cap : captures)
 				cap.inject(slice_t{buf.data(), buf.size()});
