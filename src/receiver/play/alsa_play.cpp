@@ -61,6 +61,4 @@ int main() {
 
 	while (std::cin.read(reinterpret_cast<char *>(samples), num_samples * sizeof samples[0]))
 		play_samples(num_samples);
-
-	return 0;
 }

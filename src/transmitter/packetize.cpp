@@ -19,6 +19,4 @@ int main(int argc, char **argv) {
 		std::cout.write(reinterpret_cast<char *>(&buf), sizeof(buf));  // assuming little endian
 		std::memcpy(buf.samples.data(), buf.trailing.data(), sizeof(buf.trailing));
 	}
-
-	return 0;
 }

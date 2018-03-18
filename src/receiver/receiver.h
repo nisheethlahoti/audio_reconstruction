@@ -16,7 +16,7 @@ class receiver_t {
 	std::atomic<b_itr> b_begin = batches.begin(), b_end = batches.begin() + 1;
 
 	bool write_packet(uint8_t const *packet, uint32_t pnum);
-	void mergewrite_samples(b_const_itr first, b_const_itr second);
+	void mergewrite_samples(b_const_itr first, b_const_itr second) const;
 
    public:
 	void receive_callback(slice_t packet);

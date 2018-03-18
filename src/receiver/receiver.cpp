@@ -50,7 +50,7 @@ void receiver_t::receive_callback(slice_t const packet) {
 	}
 }
 
-void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) {
+void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) const {
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {

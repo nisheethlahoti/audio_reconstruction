@@ -67,6 +67,4 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < redundancy; ++i)
 			for (auto &cap : captures)
 				cap.inject(slice_t{buf.data(), buf.size()});
-
-	return 0;
 }

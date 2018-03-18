@@ -82,5 +82,4 @@ int main(int argc, char **argv) {
 	}
 
 	player.join();
-	return 0;
 }
