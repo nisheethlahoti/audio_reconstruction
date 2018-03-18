@@ -33,7 +33,7 @@ static inline void playing_loop() {
 	}
 }
 
-static std::string filter_str = []() -> auto {
+static std::string const filter_str = []() -> auto {
 	std::stringstream stream;
 	stream << std::hex << std::setw(2) << std::setfill('0') << "ether dst ";
 	for (uint16_t byte : pin)
@@ -44,12 +44,10 @@ static std::string filter_str = []() -> auto {
 }
 ();
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) try {
 	int const redundancy = std::strtol(argv[1], nullptr, 10);
-	if (redundancy <= 0 || errno) {
-		std::cerr << "Usage: " << argv[0] << " <redundancy> <interfaces...>\n";
-		return 1;
-	}
+	if (redundancy <= 0 || errno)
+		throw std::invalid_argument(std::string(argv[0]) + " <redundancy> <ifaces...>");
 
 	multiplexer_t multiplexer;
 	multiplexer.add_fd(0);  // stdin
@@ -62,7 +60,7 @@ int main(int argc, char **argv) {
 	}
 
 	set_realtime();
-	std::thread player(playing_loop);
+	std::thread(playing_loop).detach();
 
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Press Enter to toggle corrections and Ctrl+d to quit\n";
@@ -80,6 +78,7 @@ int main(int argc, char **argv) {
 			if (multiplexer.is_ready(cap.fd()))
 				receiver.receive_callback(cap.get_packet());
 	}
-
-	player.join();
+} catch (std::exception const &expt) {
+	std::cerr << "Terminated abnormally: " << expt.what() << '\n';
+	return 1;
 }

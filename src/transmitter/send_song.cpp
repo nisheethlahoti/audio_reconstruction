@@ -42,11 +42,9 @@ constexpr std::array<uint8_t, 32> mac_header = {{
     /*26*/ 0x03,  0x00,   0x00,   0x00,   0x08,   0x00     // SNAP field
 }};
 
-int main(int argc, char **argv) {
-	if (argc < 4) {
-		std::cerr << "Usage: " << argv[0] << " <2*datarate> <redundancy> <interfaces...>\n";
-		return 1;
-	}
+int main(int argc, char **argv) try {
+	if (argc < 4)
+		throw std::invalid_argument(std::string(argv[0]) + " <2*rate> <redundancy> <ifaces...>");
 
 	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
 	std::copy(radiotap_hdr.begin(), radiotap_hdr.end(), buf.begin());
@@ -67,4 +65,7 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < redundancy; ++i)
 			for (auto &cap : captures)
 				cap.inject(slice_t{buf.data(), buf.size()});
+} catch (std::exception const &expt) {
+	std::cerr << "Error: " << expt.what() << '\n';
+	return 1;
 }

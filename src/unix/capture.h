@@ -6,8 +6,7 @@
 
 class capture_t {
 	pcap_t *pcap;
-	int fd_;
-	unsigned int recv;
+	int fd_ = -1, recv = 0;
 	char name_[IF_NAMESIZE];
 
    public:
@@ -18,11 +17,11 @@ class capture_t {
 	int fd() const;
 	char const *name() const;
 
-	slice_t get_packet();
-	void inject(slice_t);
+	slice_t get_packet() noexcept(false);
+	void inject(slice_t) noexcept(false);
 
-	void setfilter(char const *);
-	unsigned int getrecv();
+	void setfilter(char const *) noexcept(false);
+	int getrecv();
 };
 
 std::vector<capture_t> open_captures(int num, char **names);

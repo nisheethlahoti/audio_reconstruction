@@ -7,6 +7,6 @@ class multiplexer_t {
 
    public:
 	void add_fd(int fd);
-	void next();
+	void next() noexcept(false);
 	bool is_ready(int fd) const;
 };
