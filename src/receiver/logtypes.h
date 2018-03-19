@@ -37,6 +37,7 @@ inline void for_each(tuple_t &&tup, fn_t &&fn) {
 		(MAP(APPLYWRITE, __VA_ARGS__)) : arg_vals({MAP(APPLYCDR, __VA_ARGS__)}) {} \
 	};
 
-#include <receiver/loglist.h>
+#include <receiver/logtypes.list>
+#undef LOG_TYPE
 
 #endif

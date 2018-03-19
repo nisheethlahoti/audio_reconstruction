@@ -23,4 +23,4 @@ void write_samples(sample_t const *samples, size_t len) {
 	template void packet_log<CONCAT(NAME, _log)>(CONCAT(NAME, _log)); \
 	template void play_log<CONCAT(NAME, _log)>(CONCAT(NAME, _log));
 
-#include <receiver/loglist.h>
+#include <receiver/logtypes.list>

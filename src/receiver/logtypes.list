@@ -1,4 +1,4 @@
-#ifdef LOG_TYPE
+// upto 17 used up
 LOG_TYPE(5, older_packet, (uint32_t, current), (uint32_t, received))
 LOG_TYPE(6, repeated_packet, (uint32_t, packet_num))
 LOG_TYPE(7, full_buffer, (uint32_t, packet_num))
@@ -7,5 +7,3 @@ LOG_TYPE(9, reader_waiting)
 LOG_TYPE(14, validated)
 LOG_TYPE(15, playing, (uint32_t, packet))
 LOG_TYPE(16, repeat_play, (uint32_t, packet))
-#undef LOG_TYPE // 17 used up
-#endif

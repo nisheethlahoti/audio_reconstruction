@@ -46,7 +46,7 @@ int main() {
 		cout << curr_time << ' ';
 
 		switch (cin.get()) {
-#include <receiver/loglist.h>
+#include <receiver/logtypes.list>
 			default:
 				cout << "Unrecognized log id." << endl;
 				return 1;
