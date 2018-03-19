@@ -25,10 +25,8 @@ int main(int argc, char **argv) try {
 
 	while (std::cin.read(reinterpret_cast<char *>(buf.samples.data() + buf.trailing.size()),
 	                     sizeof(buf.samples))) {
-		if (++buf.num % incr == 0) {
+		if (++buf.num % incr == 0)
 			std::cerr << "\rSending packet " << buf.num;
-			std::cerr.flush();
-		}
 
 		if (!dist(gen))
 			std::cout.write(reinterpret_cast<char *>(&buf), sizeof(buf));  // assuming little endian
