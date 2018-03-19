@@ -1,8 +1,7 @@
+#include <soundrex/constants.h>
+#include <soundrex/realtime.h>
 #include <iostream>
 #include <thread>
-
-#include <constants.h>
-#include <realtime.h>
 
 int main() {
 	set_realtime();

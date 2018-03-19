@@ -1,8 +1,7 @@
 #include <pthread.h>
 #include <sched.h>
+#include <soundrex/realtime.h>
 #include <iostream>
-
-#include "realtime.h"
 
 void set_realtime() {
 	constexpr auto policy = SCHED_FIFO;

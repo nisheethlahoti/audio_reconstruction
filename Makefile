@@ -1,43 +1,44 @@
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
-objects=$(patsubst src/%.cpp, out/%.o, $(wildcard src/$1/*.cpp))
+get_objs=$(patsubst src/%.cpp, obj/%.o, $1)
+get_execs_from=$(patsubst src/unix/%$1, exec/%, $(wildcard src/unix/*$1))
 
-DEPS=$(patsubst src/%.cpp, out/%.d, $(call rwildcard,src/,*.cpp))
-RECV_TARGETS=out/receive out/alsa_play out/readlog
-TRSM_TARGETS=out/transmit out/packetize out/throttle
+dir_bins=$(filter-out exec/soundrex, $(call get_execs_from,/.))
+cpp_bins=$(call get_execs_from,.cpp)
+objs=$(call get_objs,$(call rwildcard,src/,*.cpp))
+deps=$(objs:.o=.d)
+
+all: $(cpp_bins) $(dir_bins)
+
+receiver: exec/receive exec/process exec/alsa_play exec/readlog
+transmitter: exec/transmit exec/packetize exec/throttle
 
 CXX=clang++
 COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
 LDFLAGS=$(COMMONFLAGS)
 
-all: receiver transmitter
+$(dir_bins) $(cpp_bins): obj/unix/soundrex/realtime.o
+exec/transmit exec/receive: obj/unix/soundrex/capture.o
+exec/transmit exec/receive: LDLIBS+=-lpcap
+exec/alsa_play: LDLIBS+=-lasound
+exec/process: obj/soundrex/processor.o
 
-out/receive: LDLIBS=-lpcap
-out/receive: $(call objects,receiver) $(call objects,receiver/unix) out/realtime.o out/unix/capture.o
-
-out/alsa_play: LDLIBS=-lasound
-out/alsa_play: out/receiver/play/alsa_play.o out/realtime.o
-
-out/transmit: LDLIBS=-lpcap
-out/transmit: out/transmitter/send_song.o out/realtime.o out/unix/capture.o
-
-out/readlog: out/receiver/readlog/readlog.o
-out/packetize: out/transmitter/packetize.o out/realtime.o
-out/throttle: out/transmitter/throttle.o out/realtime.o
-
-$(RECV_TARGETS) $(TRSM_TARGETS):
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-receiver: $(RECV_TARGETS)
-transmitter: $(TRSM_TARGETS)
-
-out/%.o: src/%.cpp
+obj/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
--include $(DEPS)
+exec/%:
+	@mkdir -p exec
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+-include $(deps)
 
 clean:
-	rm -rf out/
+	rm -rf obj
+	rm -rf exec
+
+.SECONDEXPANSION:
+$(dir_bins): exec/%: $$(call get_objs,$$(wildcard src/unix/%/*.cpp))
+$(cpp_bins): exec/%: $$(call get_objs,src/unix/%.cpp)
 
 .PHONY: all clean receiver transmitter

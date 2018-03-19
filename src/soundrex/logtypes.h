@@ -1,11 +1,10 @@
 #ifndef SOUNDREX_LOGTYPES_H
 #define SOUNDREX_LOGTYPES_H
 
+#include <soundrex/generic_macros.h>
 #include <cstdint>
 #include <tuple>
 #include <utility>
-
-#include <generic_macros.h>
 
 template <class tuple_t, size_t... sizes, class fn_t>
 static inline void for_each_impl(std::index_sequence<sizes...>, tuple_t &&tup, fn_t &&fn) {
@@ -37,7 +36,7 @@ inline void for_each(tuple_t &&tup, fn_t &&fn) {
 		(MAP(APPLYWRITE, __VA_ARGS__)) : arg_vals({MAP(APPLYCDR, __VA_ARGS__)}) {} \
 	};
 
-#include <receiver/logtypes.list>
+#include <soundrex/logtypes.list>
 #undef LOG_TYPE
 
 #endif

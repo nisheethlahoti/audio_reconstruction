@@ -1,9 +1,8 @@
+#include <soundrex/constants.h>
+#include <soundrex/realtime.h>
 #include <array>
 #include <cstring>
 #include <iostream>
-
-#include <constants.h>
-#include <realtime.h>
 
 int main(int argc, char **argv) {
 	packet_t buf{};

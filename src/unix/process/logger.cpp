@@ -1,4 +1,4 @@
-#include <receiver/unix/logger.h>
+#include "logger.h"
 
 logger_t::logger_t(char const *fname) : logfile(fname, std::ios::binary) {
 	using namespace std::chrono;

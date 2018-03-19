@@ -1,7 +1,6 @@
 #include <string>
 #include <system_error>
-
-#include <receiver/unix/multiplexer.h>
+#include "multiplexer.h"
 
 void multiplexer_t::add_fd(int fd) {
 	FD_SET(fd, &fdset);

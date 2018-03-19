@@ -1,10 +1,9 @@
+#include <soundrex/logtypes.h>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <tuple>
 #include <utility>
-
-#include <receiver/logtypes.h>
 
 /// Thread-unsafe logging class.
 class logger_t {

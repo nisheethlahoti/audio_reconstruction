@@ -1,15 +1,10 @@
+#include <signal.h>
+#include <soundrex/realtime.h>
+#include <unix/soundrex/capture.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <thread>
-#include <vector>
-
-#include <realtime.h>
-#include <receiver/receiver.h>
-#include <receiver/unix/multiplexer.h>
-#include <unix/capture.h>
-
-static receiver_t receiver;
+#include "multiplexer.h"
 
 static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();
@@ -22,14 +17,6 @@ static inline void report_drops(int redundancy, std::vector<capture_t> &captures
 		for (capture_t &cap : captures)
 			std::cerr << ' ' << expected - cap.getrecv() << " on " << cap.name() << ';';
 		std::cerr << '\n';
-	}
-}
-
-static inline void playing_loop() {
-	auto time = std::chrono::steady_clock::now();
-	while (std::cin) {
-		std::this_thread::sleep_until(time += duration);
-		receiver.play_next();
 	}
 }
 
@@ -60,7 +47,6 @@ int main(int argc, char **argv) try {
 	}
 
 	set_realtime();
-	std::thread(playing_loop).detach();
 
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Press Enter to toggle corrections and Ctrl+d to quit\n";
@@ -70,13 +56,15 @@ int main(int argc, char **argv) try {
 		if (multiplexer.is_ready(0)) {
 			std::string str;
 			std::getline(std::cin, str);  // Dunno why cin.ignore isn't working
-			std::cerr << (receiver.toggle_corrections() ? "Correcting\n" : "Not correcting\n");
+			kill(0, SIGURG); // TODO: Find less horrible way that this.
 		}
 
 		report_drops(redundancy, captures);
 		for (capture_t &cap : captures)
-			if (multiplexer.is_ready(cap.fd()))
-				receiver.receive_callback(cap.get_packet());
+			if (multiplexer.is_ready(cap.fd())) {
+				auto const packet = cap.get_packet();
+				std::cout.write(reinterpret_cast<char const *>(packet.data), packet.size);
+			}
 	}
 } catch (std::exception const &expt) {
 	std::cerr << "Terminated abnormally: " << expt.what() << '\n';

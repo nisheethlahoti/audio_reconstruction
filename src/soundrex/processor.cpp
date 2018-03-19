@@ -1,10 +1,9 @@
+#include <soundrex/platform_callbacks.h>
+#include <soundrex/processor.h>
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cstring>
-
-#include <receiver/platform_callbacks.h>
-#include <receiver/receiver.h>
 
 using namespace std;
 
@@ -21,7 +20,7 @@ inline static int32_t get_int_sample(mono_sample_t const &smpl) {
 	return ret >> (8 * (4 - sizeof smpl));
 }
 
-bool receiver_t::write_packet(uint8_t const *packet, uint32_t pnum) {
+bool processor_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	b_itr const finish = b_end.load(memory_order_relaxed);
 	if (b_begin.load(memory_order_consume) == finish) {
 		packet_log(full_buffer_log(pnum));
@@ -37,7 +36,7 @@ bool receiver_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	}
 }
 
-void receiver_t::receive_callback(slice_t const packet) {
+void processor_t::process(slice_t const packet) {
 	uint32_t packet_number = get_little_endian(packet.data);
 	if (packet_number < latest_packet_number) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
@@ -50,7 +49,7 @@ void receiver_t::receive_callback(slice_t const packet) {
 	}
 }
 
-void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) const {
+void processor_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) const {
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
@@ -70,7 +69,7 @@ void receiver_t::mergewrite_samples(b_const_itr const first, b_const_itr const s
 	}
 }
 
-void receiver_t::play_next() {
+void processor_t::play_next() {
 	static int further_repeat = 0;
 	b_itr const start = b_begin.load(memory_order_relaxed);
 	b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
@@ -91,7 +90,7 @@ void receiver_t::play_next() {
 	}
 }
 
-bool receiver_t::toggle_corrections() {
+bool processor_t::toggle_corrections() {
 	bool corr = correction_on.load(std::memory_order_relaxed);
 	correction_on.store(!corr, std::memory_order_release);
 	return !corr;

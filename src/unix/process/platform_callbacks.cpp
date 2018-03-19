@@ -1,7 +1,6 @@
+#include <soundrex/platform_callbacks.h>
 #include <iostream>
-
-#include <receiver/platform_callbacks.h>
-#include <receiver/unix/logger.h>
+#include "logger.h"
 
 static logger_t packetlogger("packet.bin"), playlogger("play.bin");
 
@@ -23,4 +22,4 @@ void write_samples(sample_t const *samples, size_t len) {
 	template void packet_log<CONCAT(NAME, _log)>(CONCAT(NAME, _log)); \
 	template void play_log<CONCAT(NAME, _log)>(CONCAT(NAME, _log));
 
-#include <receiver/logtypes.list>
+#include <soundrex/logtypes.list>

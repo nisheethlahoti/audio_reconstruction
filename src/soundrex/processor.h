@@ -1,10 +1,9 @@
+#include <soundrex/constants.h>
 #include <atomic>
-
-#include <constants.h>
 
 // None of its public functions can be called from more than one thread.
 // However, each of them can be called from its own separate thread.
-class receiver_t {
+class processor_t {
 	static constexpr size_t max_buf_size = 3;
 	std::atomic<bool> correction_on = true;
 	std::array<packet_t, max_buf_size + 1> batches;
@@ -19,7 +18,7 @@ class receiver_t {
 	void mergewrite_samples(b_const_itr first, b_const_itr second) const;
 
    public:
-	void receive_callback(slice_t packet);
+	void process(slice_t packet);
 	void play_next();
 	bool toggle_corrections();  // Returns whether corrections are now on.
 };

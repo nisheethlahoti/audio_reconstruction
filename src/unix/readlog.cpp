@@ -1,6 +1,5 @@
+#include <soundrex/logtypes.h>
 #include <iostream>
-
-#include <receiver/logtypes.h>
 
 using namespace std;
 
@@ -46,7 +45,7 @@ int main() {
 		cout << curr_time << ' ';
 
 		switch (cin.get()) {
-#include <receiver/logtypes.list>
+#include <soundrex/logtypes.list>
 			default:
 				cout << "Unrecognized log id." << endl;
 				return 1;
