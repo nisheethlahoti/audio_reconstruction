@@ -21,7 +21,7 @@ out/alsa_play: out/receiver/play/alsa_play.o out/realtime.o
 out/transmit: LDLIBS=-lpcap
 out/transmit: out/transmitter/send_song.o out/realtime.o out/unix/capture.o
 
-out/readlog: out/receiver/logtypes.o out/receiver/readlog/readlog.o
+out/readlog: out/receiver/readlog/readlog.o
 out/packetize: out/transmitter/packetize.o out/realtime.o
 out/throttle: out/transmitter/throttle.o out/realtime.o
 
