@@ -46,9 +46,7 @@ int main(int argc, char **argv) try {
 		throw std::invalid_argument(std::string(argv[0]) + " <2*rate> <redundancy> <ifaces...>");
 
 	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
-	std::copy(radiotap_hdr.begin(), radiotap_hdr.end(), buf.begin());
-	std::copy(mac_header.begin(), mac_header.end(), buf.begin() + radiotap_hdr.size());
-	uint8_t *const packet_loc = buf.data() + radiotap_hdr.size() + mac_header.size();
+	uint8_t *const packet_loc = copy_all<uint8_t>(buf.data(), {radiotap_hdr, mac_header});
 
 	buf[17] = atoi(argv[1]);
 	int redundancy = atoi(argv[2]);
@@ -63,7 +61,7 @@ int main(int argc, char **argv) try {
 	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
 		for (int i = 0; i < redundancy; ++i)
 			for (auto &cap : captures)
-				cap.inject(slice_t{buf.data(), buf.size()});
+				cap.inject({buf.begin(), buf.end()});
 } catch (std::exception const &expt) {
 	std::cerr << "Error: " << expt.what() << '\n';
 	return 1;

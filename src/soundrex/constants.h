@@ -23,12 +23,6 @@ struct packet_t {
 	std::array<sample_t, trailing_samples> trailing;
 };
 
-// Where negative size values represent error condition
-struct slice_t {
-	uint8_t const *data;
-	ssize_t size;
-};
-
 static_assert(sizeof(packet_t) == header_size + byte_depth * num_channels * total_samples);
 
 #endif

@@ -29,7 +29,7 @@ int main() {
 	std::thread player(playing_loop);
 	std::array<uint8_t, sizeof(packet_t)> buf;
 	while (std::cin.read(reinterpret_cast<char*>(buf.data()), buf.size()))
-		processor.process(slice_t{buf.data(), buf.size()});
+		processor.process(buf.data());
 
 	player.join();
 }

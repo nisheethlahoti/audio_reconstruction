@@ -36,8 +36,8 @@ bool processor_t::write_packet(uint8_t const *packet, uint32_t pnum) {
 	}
 }
 
-void processor_t::process(slice_t const packet) {
-	uint32_t packet_number = get_little_endian(packet.data);
+void processor_t::process(uint8_t const *packet) {
+	uint32_t packet_number = get_little_endian(packet);
 	if (packet_number < latest_packet_number) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
 	} else if (packet_number == latest_packet_number) {
@@ -45,7 +45,7 @@ void processor_t::process(slice_t const packet) {
 	} else {
 		latest_packet_number = packet_number;
 		packet_log(validated_log());
-		write_packet(packet.data + header_size, packet_number);
+		write_packet(packet + header_size, packet_number);
 	}
 }
 

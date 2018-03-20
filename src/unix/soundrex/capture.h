@@ -1,6 +1,7 @@
 #include <net/if.h>
 #include <pcap.h>
 #include <soundrex/constants.h>
+#include <soundrex/util.h>
 #include <vector>
 
 class capture_t {
@@ -16,8 +17,8 @@ class capture_t {
 	int fd() const;
 	char const *name() const;
 
-	slice_t get_packet() noexcept(false);
-	void inject(slice_t) noexcept(false);
+	slice_t<unsigned char> get_packet() noexcept(false);
+	void inject(slice_t<unsigned char>) noexcept(false);
 
 	void setfilter(char const *) noexcept(false);
 	int getrecv();

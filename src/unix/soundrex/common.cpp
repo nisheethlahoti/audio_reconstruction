@@ -13,7 +13,7 @@ void set_realtime() {
 }
 
 void send_stdin() {
-	auto resolved = wrap_error<char*>(realpath("/dev/stdin", nullptr), "realpath(cin)", nullptr);
+	auto resolved = wrap_error<char *>(realpath("/dev/stdin", nullptr), "realpath(cin)", nullptr);
 	std::cout << resolved << std::endl;
 	free(resolved);
 }

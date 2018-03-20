@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <soundrex/constants.h>
 #include <unistd.h>
 #include <unix/soundrex/common.h>
 #include <iostream>
@@ -17,14 +16,13 @@ int main(int argc, char **argv) try {
 	if (!wrap_error(fork(), "forking"))
 		wrap_error(execlp("./throttle", argv[0], nullptr), "opening throttle");
 
-	auto const rate = std::to_string(samples_per_s), numch = std::to_string(num_channels);
-	auto const format = "s" + std::to_string(8 * byte_depth) + (byte_depth > 1 ? "le" : "");
+	std::array<char const *, 2> const ffend{{"-", nullptr}};
+	char const *vals[ffmpeg_init.size() + ffmpeg_params.size() + 1 + argc];
+	copy_all<char const *>(vals, {ffmpeg_init, {argv + 1, argv + argc}, ffmpeg_params, ffend});
 
 	wrap_error(dup2(open("/dev/null", O_CLOEXEC), 0), "opening /dev/null");
 	wrap_error(dup2(pipes[1], 1), "duplicating stdout");
-	wrap_error(execlp("ffmpeg", argv[0], "-hide_banner", "-loglevel", "error", "-i", argv[1], "-f",
-	                  format.c_str(), "-ar", rate.c_str(), "-ac", numch.c_str(), "-", nullptr),
-	           "Opening ffmpeg");
+	wrap_error(execvp("ffmpeg", (char **)vals), "Opening ffmpeg");
 } catch (std::runtime_error const &err) {
 	std::cerr << argv[0] << ": " << err.what() << '\n';
 	return 1;

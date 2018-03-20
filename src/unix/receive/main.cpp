@@ -63,7 +63,7 @@ int main(int argc, char **argv) try {
 		for (capture_t &cap : captures)
 			if (multiplexer.is_ready(cap.fd())) {
 				auto const packet = cap.get_packet();
-				std::cout.write(reinterpret_cast<char const *>(packet.data), packet.size);
+				std::cout.write(reinterpret_cast<char const *>(packet.data()), packet.size());
 			}
 	}
 } catch (std::exception const &expt) {

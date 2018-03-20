@@ -18,7 +18,7 @@ class processor_t {
 	void mergewrite_samples(b_const_itr first, b_const_itr second) const;
 
    public:
-	void process(slice_t packet);
+	void process(uint8_t const * packet);
 	void play_next();
 	bool toggle_corrections();  // Returns whether corrections are now on.
 };

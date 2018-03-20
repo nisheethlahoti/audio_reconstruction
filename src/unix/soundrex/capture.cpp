@@ -49,7 +49,7 @@ capture_t::capture_t(capture_t &&other) {
 	other.pcap = nullptr;
 }
 
-slice_t capture_t::get_packet() {
+slice_t<uint8_t> capture_t::get_packet() {
 	pcap_pkthdr *header;
 	u_char const *packet;
 	int ret = pcap_next_ex(pcap, &header, &packet);
@@ -58,11 +58,11 @@ slice_t capture_t::get_packet() {
 
 	++recv;
 	uint32_t header_len = 32u /*mac*/ + (packet[2] | uint32_t(packet[3]) << 8) /*radiotap*/;
-	return slice_t{packet + header_len, ssize_t(header->caplen) - ssize_t(header_len)};
+	return {packet + header_len, packet + header->caplen};
 }
 
-void capture_t::inject(slice_t packet) {
-	if (pcap_sendpacket(pcap, packet.data, packet.size) != 0)
+void capture_t::inject(slice_t<uint8_t> packet) {
+	if (pcap_sendpacket(pcap, packet.data(), packet.size()) != 0)
 		throw std::runtime_error(std::string("packet injection: ") + pcap_geterr(pcap));
 }
 
