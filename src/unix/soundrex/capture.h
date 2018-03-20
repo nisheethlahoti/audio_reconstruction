@@ -1,6 +1,5 @@
 #include <net/if.h>
 #include <pcap.h>
-#include <soundrex/constants.h>
 #include <soundrex/util.h>
 #include <vector>
 
@@ -24,4 +23,4 @@ class capture_t {
 	int getrecv();
 };
 
-std::vector<capture_t> open_captures(int num, char **names);
+std::vector<capture_t> open_captures(slice_t<char const *> names);

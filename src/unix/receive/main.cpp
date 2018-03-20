@@ -40,7 +40,7 @@ int main(int argc, char **argv) try {
 	multiplexer.add_fd(0);  // stdin
 
 	std::cerr << "Filter set to (" << filter_str << ")\n";
-	std::vector<capture_t> captures = open_captures(argc - 2, argv + 2);
+	std::vector<capture_t> captures = open_captures({argv + 2, argv + argc});
 	for (capture_t &cap : captures) {
 		cap.setfilter(filter_str.c_str());
 		multiplexer.add_fd(cap.fd());

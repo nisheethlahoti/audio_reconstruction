@@ -1,7 +1,7 @@
-#include <unix/soundrex/capture.h>
-#include <cstdio>
+#include <unix/soundrex/common.h>
 #include <cstring>
 #include <iostream>
+#include "capture.h"
 
 int capture_t::fd() const { return fd_; }
 char const *capture_t::name() const { return name_; }
@@ -12,36 +12,34 @@ int capture_t::getrecv() {
 	return ret;
 }
 
-capture_t::capture_t(char const *iface) {
+capture_t::capture_t(char const *iface) try {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	std::cerr << "Opening interface " << iface << std::endl;
 	std::strcpy(name_, iface);
 
 	pcap = pcap_create(iface, errbuf);
-	if (pcap == nullptr) {
-		std::cerr << "unable to open: " << errbuf << std::endl;
-	} else {
-		try {
-			if (int ret = pcap_can_set_rfmon(pcap); ret != 1)
-				throw std::pair("setting monitor mode", ret);
+	if (pcap == nullptr)
+		throw std::runtime_error(std::string("unable to open: ") + errbuf);
 
-			pcap_set_snaplen(pcap, sizeof(packet_t) + 100);
-			pcap_set_immediate_mode(pcap, 1);
-			pcap_set_rfmon(pcap, 1);
+	if (int ret = pcap_can_set_rfmon(pcap); ret != 1)
+		throw std::pair(pcap, ret);
 
-			if (int ret = pcap_activate(pcap); ret < 0)
-				throw std::pair("activating", ret);
-			else if (ret > 0)
-				std::cerr << "Warning activating: " << pcap_statustostr(ret) << std::endl;
+	pcap_set_snaplen(pcap, sizeof(packet_t) + 100);
+	pcap_set_immediate_mode(pcap, 1);
+	pcap_set_rfmon(pcap, 1);
 
-			fd_ = pcap_get_selectable_fd(pcap);
-			if (fd_ == -1)
-				std::cerr << "Error getting fd_ from pcap\n";
-		} catch (std::pair<char const *, int> err) {
-			std::cerr << "Error " << err.first << ": " << pcap_statustostr(err.second) << std::endl;
-			pcap_perror(pcap, "Detail");
-		}
-	}
+	if (int ret = pcap_activate(pcap); ret < 0)
+		throw std::pair(pcap, ret);
+	else if (ret > 0)
+		std::cerr << "Warning activating: " << pcap_statustostr(ret) << std::endl;
+
+	fd_ = pcap_get_selectable_fd(pcap);
+	if (fd_ == -1)
+		throw std::pair(pcap, -1);
+} catch (std::pair<pcap_t *, int> const &err) {
+	auto str = std::string(pcap_statustostr(err.second)) + ": " + pcap_geterr(err.first);
+	pcap_close(err.first);
+	throw std::runtime_error(str);
 }
 
 capture_t::capture_t(capture_t &&other) {
@@ -77,14 +75,11 @@ capture_t::~capture_t() {
 		pcap_close(pcap);
 }
 
-std::vector<capture_t> open_captures(int num, char **names) {
+std::vector<capture_t> open_captures(slice_t<char const *> names) {
 	std::vector<capture_t> captures;
-	captures.reserve(num);
-	for (int i = 0; i < num; ++i) {
-		captures.emplace_back(names[i]);
-		if (captures.back().fd() == -1)
-			captures.pop_back();
-	}
+	captures.reserve(names.size());
+	for (char const *name : names)
+		trap_error([&captures, name]() { captures.emplace_back(name); });
 
 	std::cerr << captures.size() << " interfaces opened for capture." << std::endl;
 	return captures;

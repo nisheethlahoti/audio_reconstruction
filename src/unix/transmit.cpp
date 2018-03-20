@@ -55,7 +55,7 @@ int main(int argc, char **argv) try {
 		return 1;
 	}
 
-	std::vector<capture_t> captures = open_captures(argc - 3, argv + 3);
+	std::vector<capture_t> captures = open_captures({argv + 3, argv + argc});
 
 	set_realtime();
 	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
