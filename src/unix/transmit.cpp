@@ -2,8 +2,8 @@
 
 #include <pcap.h>
 #include <soundrex/constants.h>
-#include <soundrex/realtime.h>
 #include <unix/soundrex/capture.h>
+#include <unix/soundrex/common.h>
 #include <algorithm>
 #include <iostream>
 

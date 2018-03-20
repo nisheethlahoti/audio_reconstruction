@@ -17,7 +17,7 @@ COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
 LDFLAGS=$(COMMONFLAGS)
 
-$(dir_bins) $(cpp_bins): obj/unix/soundrex/realtime.o
+$(dir_bins) $(cpp_bins): obj/unix/soundrex/common.o
 exec/transmit exec/receive: obj/unix/soundrex/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap
 exec/alsa_play: LDLIBS+=-lasound

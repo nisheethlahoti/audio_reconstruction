@@ -1,6 +1,6 @@
 #include <signal.h>
 #include <soundrex/processor.h>
-#include <soundrex/realtime.h>
+#include <unix/soundrex/common.h>
 #include <iostream>
 #include <thread>
 

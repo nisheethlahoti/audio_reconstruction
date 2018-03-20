@@ -1,6 +1,6 @@
-#include <string>
-#include <system_error>
 #include "multiplexer.h"
+#include <unix/soundrex/common.h>
+#include <string>
 
 void multiplexer_t::add_fd(int fd) {
 	FD_SET(fd, &fdset);
@@ -9,8 +9,7 @@ void multiplexer_t::add_fd(int fd) {
 
 void multiplexer_t::next() {
 	tmpset = fdset;
-	if (select(fdmax + 1, &tmpset, nullptr, nullptr, nullptr) == -1)
-		throw std::system_error(errno, std::system_category(), "select call");
+	wrap_error(select(fdmax + 1, &tmpset, nullptr, nullptr, nullptr), "select call");
 }
 
 bool multiplexer_t::is_ready(int fd) const { return FD_ISSET(fd, &tmpset); }

@@ -1,6 +1,6 @@
 #include <signal.h>
-#include <soundrex/realtime.h>
 #include <unix/soundrex/capture.h>
+#include <unix/soundrex/common.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -56,7 +56,7 @@ int main(int argc, char **argv) try {
 		if (multiplexer.is_ready(0)) {
 			std::string str;
 			std::getline(std::cin, str);  // Dunno why cin.ignore isn't working
-			kill(0, SIGURG); // TODO: Find less horrible way that this.
+			kill(0, SIGURG);              // TODO: Find less horrible way that this.
 		}
 
 		report_drops(redundancy, captures);

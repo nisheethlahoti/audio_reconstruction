@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <sched.h>
-#include <soundrex/realtime.h>
 #include <iostream>
+#include "common.h"
 
 void set_realtime() {
 	constexpr auto policy = SCHED_FIFO;
@@ -10,4 +10,10 @@ void set_realtime() {
 	std::ios::sync_with_stdio(false);
 	std::cin.setf(std::ios::unitbuf);
 	std::cout.setf(std::ios::unitbuf);
+}
+
+void send_stdin() {
+	auto resolved = wrap_error<char*>(realpath("/dev/stdin", nullptr), "realpath(cin)", nullptr);
+	std::cout << resolved << std::endl;
+	free(resolved);
 }

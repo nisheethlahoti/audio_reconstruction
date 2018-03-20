@@ -1,5 +1,5 @@
 #include <soundrex/constants.h>
-#include <soundrex/realtime.h>
+#include <unix/soundrex/common.h>
 #include <array>
 #include <cstring>
 #include <iostream>
@@ -17,11 +17,15 @@ int main(int argc, char **argv) try {
 	if (argc > 2)
 		buf.num = std::strtoul(argv[2], &argv[2], 0);
 
-	if (argv[1][0] || dist.p() <= 0 || dist.p() > 1 || (argc > 2 && argv[2][0]) || errno)
+	if (argv[1][0] || dist.p() < 0 || dist.p() > 1 || (argc > 2 && argv[2][0]) || errno)
 		throw std::runtime_error("Invalid argument");
 
 	std::cerr << "Dropping packets with probability " << dist.p() << '\n';
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));
+
+	std::string tname;
+	std::getline(std::cin, tname);
+	std::cerr << "Setting terminal to " << tname << '\n';
 
 	while (std::cin.read(reinterpret_cast<char *>(buf.samples.data() + buf.trailing.size()),
 	                     sizeof(buf.samples))) {
