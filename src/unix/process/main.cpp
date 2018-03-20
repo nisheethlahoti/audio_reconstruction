@@ -1,6 +1,6 @@
 #include <signal.h>
 #include <soundrex/processor.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iostream>
 #include <thread>
 
@@ -18,9 +18,7 @@ static void playing_loop() {
 	}
 }
 
-int main() {
-	set_realtime();
-
+void soundrex_main(slice_t<char *>) {
 	struct sigaction action {};
 	action.sa_handler = toggle_corrections;
 	action.sa_flags = SA_RESTART;
@@ -28,7 +26,7 @@ int main() {
 
 	std::thread player(playing_loop);
 	std::array<uint8_t, sizeof(packet_t)> buf;
-	while (std::cin.read(reinterpret_cast<char*>(buf.data()), buf.size()))
+	while (std::cin.read(reinterpret_cast<char *>(buf.data()), buf.size()))
 		processor.process(buf.data());
 
 	player.join();

@@ -2,6 +2,7 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 get_objs=$(patsubst src/%.cpp, obj/%.o, $1)
 get_execs_from=$(patsubst src/unix/%$1, exec/%, $(wildcard src/unix/*$1))
 
+nocommon_bins=exec/record_file exec/stream_file exec/readlog
 dir_bins=$(filter-out exec/soundrex, $(call get_execs_from,/.))
 cpp_bins=$(call get_execs_from,.cpp)
 objs=$(call get_objs,$(call rwildcard,src/,*.cpp))
@@ -17,6 +18,7 @@ COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
 LDFLAGS=$(COMMONFLAGS)
 
+$(filter-out $(nocommon_bins), $(dir_bins) $(cpp_bins)): obj/unix/soundrex/main.o
 $(dir_bins) $(cpp_bins): obj/unix/soundrex/common.o
 exec/transmit exec/receive: obj/unix/soundrex/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap

@@ -3,7 +3,7 @@
 #include <pcap.h>
 #include <soundrex/constants.h>
 #include <unix/soundrex/capture.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <algorithm>
 #include <iostream>
 
@@ -41,28 +41,22 @@ constexpr std::array<uint8_t, 32> mac_header = {{
     /*26*/ 0x03,  0x00,   0x00,   0x00,   0x08,   0x00     // SNAP field
 }};
 
-int main(int argc, char **argv) try {
-	if (argc < 4)
-		throw std::invalid_argument(std::string(argv[0]) + " <2*rate> <redundancy> <ifaces...>");
+void soundrex_main(slice_t<char *> args) {
+	if (args.size() < 4)
+		throw std::invalid_argument(std::string(args[0]) + " <2*rate> <redun> <ifaces...>");
 
 	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
 	uint8_t *const packet_loc = copy_all<uint8_t>(buf.data(), {radiotap_hdr, mac_header});
 
-	buf[17] = atoi(argv[1]);
-	int redundancy = atoi(argv[2]);
-	if (redundancy <= 0) {
-		std::cerr << "Redundancy should be positive, not " << redundancy << '\n';
-		return 1;
-	}
+	buf[17] = atoi(args[1]);
+	int redundancy = atoi(args[2]);
+	if (redundancy <= 0)
+		throw std::runtime_error("non-positive redundancy " + std::to_string(redundancy));
 
-	std::vector<capture_t> captures = open_captures({argv + 3, argv + argc});
+	std::vector<capture_t> captures = open_captures(args.subspan(3));
 
-	set_realtime();
 	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
 		for (int i = 0; i < redundancy; ++i)
 			for (auto &cap : captures)
 				cap.inject({buf.begin(), buf.end()});
-} catch (std::exception const &expt) {
-	std::cerr << "Error: " << expt.what() << '\n';
-	return 1;
 }

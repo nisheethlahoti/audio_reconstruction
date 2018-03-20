@@ -1,5 +1,4 @@
 #include <alsa/asoundlib.h>
-#include <soundrex/constants.h>
 #include <unix/soundrex/common.h>
 #include <iostream>
 
@@ -34,14 +33,10 @@ static void play_samples(size_t const len) {
 	}
 }
 
-int main() {
-	set_realtime();
-
+void soundrex_main(slice_t<char *>) {
 	int err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
-	if (err < 0) {
-		std::cerr << "Playback open error: " << snd_strerror(err) << std::endl;
-		return 1;
-	}
+	if (err < 0)
+		throw std::runtime_error(std::string("Playback open error: ") + snd_strerror(err));
 
 	if ((err = snd_pcm_set_params(handle,                  // handle
 	                              pcm_format(byte_depth),  // Format of individual channel samples
@@ -49,10 +44,8 @@ int main() {
 	                              num_channels,                   // number of channels
 	                              samples_per_s,                  // Sample rate
 	                              1,                              // ?
-	                              packet_samples * 2000000ull / samples_per_s)) < 0) {  // Max delay
-		std::cerr << "Parameter setting error: " << snd_strerror(err) << std::endl;
-		return 1;
-	}
+	                              packet_samples * 2000000ull / samples_per_s)) < 0)  // Max delay
+		throw std::runtime_error(std::string("Parameter setting error: ") + snd_strerror(err));
 
 	std::cin.peek();
 	snd_pcm_prepare(handle);

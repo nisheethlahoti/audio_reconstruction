@@ -1,10 +1,9 @@
 #include <soundrex/constants.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iostream>
 #include <thread>
 
-int main() {
-	set_realtime();
+void soundrex_main(slice_t<char *>) {
 	std::array<sample_t, packet_samples> buffer;
 	std::chrono::time_point<std::chrono::steady_clock> time{};
 

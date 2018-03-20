@@ -3,9 +3,6 @@
 #include <functional>
 #include <system_error>
 
-// Sets unbuffered operations on stdin and stdout, and FIFO scheduling on the current thread
-void set_realtime();
-
 // For processes that want to send their stdin over their stdout
 void send_stdin() noexcept(false);
 

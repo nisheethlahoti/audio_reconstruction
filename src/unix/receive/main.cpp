@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <unix/soundrex/capture.h>
 #include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -31,22 +32,20 @@ static std::string const filter_str = []() -> auto {
 }
 ();
 
-int main(int argc, char **argv) try {
-	int const redundancy = std::strtol(argv[1], nullptr, 10);
+void soundrex_main(slice_t<char *> args) {
+	int const redundancy = std::strtol(args[1], nullptr, 10);
 	if (redundancy <= 0 || errno)
-		throw std::invalid_argument(std::string(argv[0]) + " <redundancy> <ifaces...>");
+		throw std::invalid_argument(std::string(args[0]) + " <redundancy> <ifaces...>");
 
 	multiplexer_t multiplexer;
 	multiplexer.add_fd(0);  // stdin
 
 	std::cerr << "Filter set to (" << filter_str << ")\n";
-	std::vector<capture_t> captures = open_captures({argv + 2, argv + argc});
+	std::vector<capture_t> captures = open_captures(args.subspan(2));
 	for (capture_t &cap : captures) {
 		cap.setfilter(filter_str.c_str());
 		multiplexer.add_fd(cap.fd());
 	}
-
-	set_realtime();
 
 	std::cerr << std::fixed << std::setprecision(2);
 	std::cerr << "Press Enter to toggle corrections and Ctrl+d to quit\n";
@@ -66,7 +65,4 @@ int main(int argc, char **argv) try {
 				std::cout.write(reinterpret_cast<char const *>(packet.data()), packet.size());
 			}
 	}
-} catch (std::exception const &expt) {
-	std::cerr << "Terminated abnormally: " << expt.what() << '\n';
-	return 1;
 }

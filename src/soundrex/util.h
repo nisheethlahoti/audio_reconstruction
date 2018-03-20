@@ -15,8 +15,11 @@ class slice_t {
 	template <typename Container>
 	slice_t(Container const &ctn) : begin_(ctn.begin()), end_(ctn.end()) {}
 
+	constexpr T const &operator[](size_t index) { return begin_[index]; }
+	constexpr slice_t<T> subspan(std::ptrdiff_t offset) { return {begin_ + offset, end_}; }
+
 	T const *data() const noexcept { return begin_; }
-	ssize_t size() const noexcept { return end_ - begin_; }
+	std::ptrdiff_t size() const noexcept { return end_ - begin_; }
 	T const *begin() const noexcept { return begin_; }
 	T const *end() const noexcept { return end_; }
 };

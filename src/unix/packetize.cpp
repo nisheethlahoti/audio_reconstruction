@@ -1,24 +1,24 @@
 #include <soundrex/constants.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <array>
 #include <cstring>
 #include <iostream>
 #include <random>
 
-int main(int argc, char **argv) try {
-	if (argc < 2)
-		throw std::runtime_error("Too few arguments");
+void soundrex_main(slice_t<char *> args) {
+	char *postp, *postnum;
+	if (args.size() < 2)
+		throw std::runtime_error("Too few arguments: <drop_chance> [<starting_num>]");
 
 	packet_t buf{};
 	std::default_random_engine gen(12345);
-	std::bernoulli_distribution dist(std::strtod(argv[1], &argv[1]));
+	std::bernoulli_distribution dist(std::strtod(args[1], &postp));
 
-	set_realtime();
-	if (argc > 2)
-		buf.num = std::strtoul(argv[2], &argv[2], 0);
+	if (args.size() > 2)
+		buf.num = std::strtoul(args[2], &postnum, 0);
 
-	if (argv[1][0] || dist.p() < 0 || dist.p() > 1 || (argc > 2 && argv[2][0]) || errno)
-		throw std::runtime_error("Invalid argument");
+	if (*postp || dist.p() < 0 || dist.p() > 1 || (args.size() > 2 && *postnum) || errno)
+		throw std::runtime_error("Invalid argument: <drop_chance> [<starting_num>]");
 
 	std::cerr << "Dropping packets with probability " << dist.p() << '\n';
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));
@@ -38,7 +38,4 @@ int main(int argc, char **argv) try {
 	}
 
 	std::cerr << std::endl;
-} catch (std::runtime_error &err) {
-	std::cerr << err.what() << "; Usage: " << argv[0] << " <drop_chance> [<starting_num>]\n";
-	return 1;
 }
