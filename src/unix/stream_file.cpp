@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <unix/soundrex/common.h>
+#include <unix/soundrex/ffmpeg.h>
 #include <iostream>
 #include <string>
 

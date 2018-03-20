@@ -1,5 +1,6 @@
+#include <soundrex/util.h>
 #include <unistd.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/ffmpeg.h>
 
 int main(int argc, char **argv) {
 	std::array<char const *, 2> const in{{"-i", "-"}};
