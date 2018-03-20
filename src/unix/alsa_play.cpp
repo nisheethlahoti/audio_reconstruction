@@ -1,5 +1,5 @@
 #include <alsa/asoundlib.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iostream>
 
 static constexpr size_t num_samples = packet_samples;

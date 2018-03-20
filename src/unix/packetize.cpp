@@ -7,18 +7,17 @@
 
 void soundrex_main(slice_t<char *> args) {
 	char *postp, *postnum;
-	if (args.size() < 2)
-		throw std::runtime_error("Too few arguments: <drop_chance> [<starting_num>]");
+	if (args.empty())
+		throw std::domain_error("<drop_chance> [<starting_num>]");
 
-	packet_t buf{};
+	double const prob = std::strtod(args[0], &postp);
+	long const num = args.size() > 1 ? std::strtol(args[1], &postnum, 0) : 0;
+	if (*postp || prob < 0 || prob > 1 || (args.size() > 1 && *postnum) || num < 0)
+		throw std::domain_error("<drop_chance (0.0-1.0)> [<starting_num (unsigned 32-bit)>]");
+
+	packet_t buf{static_cast<uint32_t>(num), {}, {}};
 	std::default_random_engine gen(12345);
-	std::bernoulli_distribution dist(std::strtod(args[1], &postp));
-
-	if (args.size() > 2)
-		buf.num = std::strtoul(args[2], &postnum, 0);
-
-	if (*postp || dist.p() < 0 || dist.p() > 1 || (args.size() > 2 && *postnum) || errno)
-		throw std::runtime_error("Invalid argument: <drop_chance> [<starting_num>]");
+	std::bernoulli_distribution dist(prob);
 
 	std::cerr << "Dropping packets with probability " << dist.p() << '\n';
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));

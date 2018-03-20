@@ -1,12 +1,12 @@
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iostream>
 
 void soundrex_main(slice_t<char *> args) {
 	sockaddr_in self;
 	self.sin_family = AF_INET;
-	self.sin_addr.s_addr = args.size() > 1 ? inet_addr(args[1]) : htonl(INADDR_ANY);
+	self.sin_addr.s_addr = args.empty() ? htonl(INADDR_ANY) : inet_addr(args[0]);
 	self.sin_port = htons(9428);
 
 	int sockfd = wrap_error(socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP), "creating socket");

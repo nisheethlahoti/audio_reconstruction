@@ -1,10 +1,8 @@
 #include <signal.h>
 #include <unix/soundrex/capture.h>
-#include <unix/soundrex/common.h>
 #include <unix/soundrex/main.h>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include "multiplexer.h"
 
 static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
@@ -33,15 +31,19 @@ static std::string const filter_str = []() -> auto {
 ();
 
 void soundrex_main(slice_t<char *> args) {
-	int const redundancy = std::strtol(args[1], nullptr, 10);
-	if (redundancy <= 0 || errno)
-		throw std::invalid_argument(std::string(args[0]) + " <redundancy> <ifaces...>");
+	if (args.empty())
+		throw std::domain_error("<redundancy> <ifaces...>");
+
+	char *endpos = args[0];
+	int const redundancy = std::strtol(args[0], &endpos, 0);
+	if (redundancy <= 0 || *endpos)
+		throw std::runtime_error("invalid value of redundancy");
 
 	multiplexer_t multiplexer;
 	multiplexer.add_fd(0);  // stdin
 
 	std::cerr << "Filter set to (" << filter_str << ")\n";
-	std::vector<capture_t> captures = open_captures(args.subspan(2));
+	std::vector<capture_t> captures = open_captures(args.subspan(1));
 	for (capture_t &cap : captures) {
 		cap.setfilter(filter_str.c_str());
 		multiplexer.add_fd(cap.fd());

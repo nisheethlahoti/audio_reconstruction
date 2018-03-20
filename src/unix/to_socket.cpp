@@ -2,7 +2,7 @@
 #include <netinet/in.h>
 #include <soundrex/constants.h>
 #include <sys/socket.h>
-#include <unix/soundrex/common.h>
+#include <unix/soundrex/main.h>
 #include <iostream>
 
 void soundrex_main(slice_t<char *>) {

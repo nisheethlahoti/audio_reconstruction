@@ -1,10 +1,8 @@
 // WIFI CRC POLYNOMIAL IS 1 00000100 11000001 00011101 10110111
 
 #include <pcap.h>
-#include <soundrex/constants.h>
 #include <unix/soundrex/capture.h>
 #include <unix/soundrex/main.h>
-#include <algorithm>
 #include <iostream>
 
 constexpr std::array<uint8_t, 24> const radiotap_hdr = {{
@@ -42,21 +40,22 @@ constexpr std::array<uint8_t, 32> mac_header = {{
 }};
 
 void soundrex_main(slice_t<char *> args) {
-	if (args.size() < 4)
-		throw std::invalid_argument(std::string(args[0]) + " <2*rate> <redun> <ifaces...>");
+	if (args.size() < 2)
+		throw std::domain_error("<2*bitrate> <redundancy> <ifaces...>");
 
 	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
 	uint8_t *const packet_loc = copy_all<uint8_t>(buf.data(), {radiotap_hdr, mac_header});
 
-	buf[17] = atoi(args[1]);
-	int redundancy = atoi(args[2]);
-	if (redundancy <= 0)
-		throw std::runtime_error("non-positive redundancy " + std::to_string(redundancy));
+	char *prate, *predun;
+	long const drate = std::strtol(args[0], &prate, 0), redun = std::strtol(args[1], &predun, 0);
+	if (drate > 255 || drate <= 0 || redun <= 0 || *prate || *predun)
+		throw std::runtime_error("bad data rate or redundancy");
 
-	std::vector<capture_t> captures = open_captures(args.subspan(3));
+	buf[17] = drate;
+	std::vector<capture_t> captures = open_captures(args.subspan(2));
 
 	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
-		for (int i = 0; i < redundancy; ++i)
+		for (int i = 0; i < redun; ++i)
 			for (auto &cap : captures)
 				cap.inject({buf.begin(), buf.end()});
 }

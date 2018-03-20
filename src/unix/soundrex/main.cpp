@@ -11,7 +11,7 @@ int main(int argc, char **argv) try {
 	std::cin.setf(std::ios::unitbuf);
 	std::cout.setf(std::ios::unitbuf);
 
-	soundrex_main({argv, argv + argc});
+	soundrex_main({argv + 1, argv + argc});
 } catch (std::runtime_error const &err) {
 	std::cerr << argv[0] << ": " << err.what() << '\n';
 	return 1;
