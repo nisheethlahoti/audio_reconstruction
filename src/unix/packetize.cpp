@@ -23,10 +23,6 @@ void soundrex_main(slice_t<char *> args) {
 	std::cerr << "Dropping packets with probability " << dist.p() << '\n';
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));
 
-	std::string tname;
-	std::getline(std::cin, tname);
-	std::cerr << "Setting terminal to " << tname << '\n';
-
 	while (std::cin.read(reinterpret_cast<char *>(buf.samples.data() + buf.trailing.size()),
 	                     sizeof(buf.samples))) {
 		if (++buf.num % incr == 0)

@@ -10,7 +10,6 @@ void soundrex_main(slice_t<char *> args) {
 	self.sin_port = htons(9428);
 
 	int sockfd = wrap_error(socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP), "creating socket");
-	send_stdin();
 	wrap_error(bind(sockfd, (sockaddr const *)&self, sizeof(self)), "binding socket");
 
 	std::array<sample_t, packet_samples> samples;

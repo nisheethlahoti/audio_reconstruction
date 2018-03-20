@@ -1,0 +1,5 @@
+A list of whatever's non-portable in the "unix" folder, based on my immediate memory (so definitely not complete):
+
+1. Some files read from fd 2 by default (i.e. assume that the fd pointed to by 2 isn't in write-only mode)
+2. endianness is assumed in packetize.cpp (Requires just 3 lines of code to remove the assumption though)
+3. sizeof(packet_size) is actually be assumed to be our packet size. This is, however, guarded by a static_assert

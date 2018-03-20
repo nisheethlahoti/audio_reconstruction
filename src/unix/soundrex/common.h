@@ -3,9 +3,6 @@
 #include <functional>
 #include <system_error>
 
-// For processes that want to send their stdin over their stdout
-void send_stdin() noexcept(false);
-
 void trap_error(std::function<void()> func);
 
 template <typename T>

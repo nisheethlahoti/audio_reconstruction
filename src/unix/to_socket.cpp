@@ -15,10 +15,6 @@ void soundrex_main(slice_t<char *>) {
 	if (sockfd < 0)
 		throw std::runtime_error("Can't create socket.");
 
-	std::string tname;
-	std::getline(std::cin, tname);
-	std::cerr << "Setting terminal to " << tname << '\n';
-
 	std::array<sample_t, packet_samples> samples;
 	while (std::cin.read(reinterpret_cast<char *>(&samples), sizeof(samples)))
 		sendto(sockfd, &samples, sizeof(samples), 0, (sockaddr const *)&dest, sizeof(dest));
