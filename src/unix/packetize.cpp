@@ -24,9 +24,7 @@ void soundrex_main(slice_t<char *> args) {
 
 	while (std::cin.read(reinterpret_cast<char *>(buf.samples.data() + buf.trailing.size()),
 	                     sizeof(buf.samples))) {
-		if (++buf.num % incr == 0)
-			std::cerr << "\rSending packet " << buf.num;
-
+		++buf.num;
 		if (!dist(gen))
 			std::cout.write(reinterpret_cast<char *>(&buf), sizeof(buf));  // assuming little endian
 		std::memcpy(buf.samples.data(), buf.trailing.data(), sizeof(buf.trailing));

@@ -4,6 +4,7 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -51,6 +52,10 @@ void processor_t::process(uint8_t const *packet) {
 
 void processor_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) const {
 	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
+		static size_t num = 0;
+		if (++num % 128 == 0)
+			std::cerr << "Playing " << second->num << " as " << num << '\r';
+
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
 		decltype(first->trailing) samples;
