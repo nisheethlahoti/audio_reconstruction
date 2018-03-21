@@ -16,13 +16,13 @@ transmitter: exec/transmit exec/packetize exec/throttle
 CXX=clang++
 COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
-LDFLAGS=$(COMMONFLAGS)
+LDFLAGS=$(COMMONFLAGS) -B/usr/lib/gold-ld
 
 $(filter-out $(nocommon_bins), $(dir_bins) $(cpp_bins)): obj/unix/soundrex/main.o
 $(dir_bins) $(cpp_bins): obj/unix/soundrex/common.o
 exec/transmit exec/receive: obj/unix/soundrex/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap
-exec/alsa_play: LDLIBS+=-lasound
+exec/process: LDLIBS+=-lasound
 exec/process: obj/soundrex/processor.o
 
 obj/%.o: src/%.cpp

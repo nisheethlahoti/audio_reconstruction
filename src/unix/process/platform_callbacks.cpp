@@ -1,8 +1,10 @@
+#include <alsa/asoundlib.h>
 #include <soundrex/platform_callbacks.h>
 #include <iostream>
 #include "logger.h"
 
 static logger_t packetlogger("packet.bin"), playlogger("play.bin");
+extern snd_pcm_t *handle;
 
 template <class log_t>
 void packet_log(log_t log) {
@@ -15,7 +17,12 @@ void play_log(log_t log) {
 }
 
 void write_samples(sample_t const *samples, size_t len) {
-	std::cout.write(reinterpret_cast<char const *>(samples), len * sizeof sample_t());
+	snd_pcm_sframes_t frames;
+	while (frames = snd_pcm_writei(handle, samples, len), frames < 0)
+		snd_pcm_recover(handle, frames, 0);
+
+	if (frames < len)
+		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")\n";
 }
 
 #define LOG_TYPE(_, NAME, ...)                                        \

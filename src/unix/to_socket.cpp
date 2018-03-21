@@ -16,6 +16,7 @@ void soundrex_main(slice_t<char *>) {
 		throw std::runtime_error("Can't create socket.");
 
 	std::array<sample_t, packet_samples> samples;
-	while (std::cin.read(reinterpret_cast<char *>(&samples), sizeof(samples)))
-		sendto(sockfd, &samples, sizeof(samples), 0, (sockaddr const *)&dest, sizeof(dest));
+	sendto(sockfd, &samples, 0, 0, (sockaddr const *)&dest, sizeof(dest));
+	// while (std::cin.read(reinterpret_cast<char *>(&samples), sizeof(samples)))
+	//	sendto(sockfd, &samples, sizeof(samples), 0, (sockaddr const *)&dest, sizeof(dest));
 }
