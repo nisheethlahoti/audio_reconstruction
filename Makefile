@@ -2,7 +2,7 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 get_objs=$(patsubst src/%.cpp, obj/%.o, $1)
 get_execs_from=$(patsubst src/unix/%$1, exec/%, $(wildcard src/unix/*$1))
 
-nocommon_bins=exec/record_file exec/stream_file exec/readlog
+nocommon_bins=exec/record_file exec/read_file exec/readlog
 dir_bins=$(filter-out exec/soundrex, $(call get_execs_from,/.))
 cpp_bins=$(call get_execs_from,.cpp)
 objs=$(call get_objs,$(call rwildcard,src/,*.cpp))
