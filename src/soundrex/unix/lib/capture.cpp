@@ -1,4 +1,4 @@
-#include <unix/soundrex/common.h>
+#include <soundrex/unix/lib.h>
 #include <cstring>
 #include <iostream>
 #include "capture.h"

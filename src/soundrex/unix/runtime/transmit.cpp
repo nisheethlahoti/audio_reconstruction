@@ -1,8 +1,8 @@
 // WIFI CRC POLYNOMIAL IS 1 00000100 11000001 00011101 10110111
 
 #include <pcap.h>
-#include <unix/soundrex/capture.h>
-#include <unix/soundrex/main.h>
+#include <soundrex/unix/lib/capture.h>
+#include <soundrex/unix/runtime/lib.h>
 #include <iostream>
 
 constexpr std::array<uint8_t, 24> const radiotap_hdr = {{

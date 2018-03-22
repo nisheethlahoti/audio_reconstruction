@@ -1,6 +1,6 @@
-#include "multiplexer.h"
-#include <unix/soundrex/common.h>
+#include <soundrex/unix/lib.h>
 #include <string>
+#include "multiplexer.h"
 
 void multiplexer_t::add_fd(int fd) {
 	FD_SET(fd, &fdset);

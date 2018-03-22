@@ -1,6 +1,6 @@
+#include <soundrex/unix/ffmpeg.h>
 #include <soundrex/util.h>
 #include <unistd.h>
-#include <unix/soundrex/ffmpeg.h>
 
 int main(int argc, char **argv) {
 	char const *vals[ffmpeg_init.size() + ffmpeg_params.size() + 1 + argc];

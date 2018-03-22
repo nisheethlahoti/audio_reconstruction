@@ -1,3 +1,3 @@
-#include <unix/soundrex/common.h>
+#include <soundrex/unix/lib.h>
 
 void soundrex_main(slice_t<char *>);

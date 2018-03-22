@@ -1,31 +1,39 @@
-rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
-get_objs=$(patsubst src/%.cpp, obj/%.o, $1)
-get_execs_from=$(patsubst src/unix/%$1, exec/%, $(wildcard src/unix/*$1))
-
-nocommon_bins=exec/record_file exec/read_file exec/readlog
-dir_bins=$(filter-out exec/soundrex, $(call get_execs_from,/.))
-cpp_bins=$(call get_execs_from,.cpp)
-objs=$(call get_objs,$(call rwildcard,src/,*.cpp))
-deps=$(objs:.o=.d)
-
-all: $(cpp_bins) $(dir_bins)
-
-receiver: exec/receive exec/process exec/alsa_play exec/readlog
-transmitter: exec/transmit exec/packetize exec/throttle
-
+SRCROOT=src/soundrex
 CXX=clang++
 COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
-CXXFLAGS=$(COMMONFLAGS) -I ./src/ -MMD -MP
+CXXFLAGS=$(COMMONFLAGS) -I src/ -MMD -MP
 LDFLAGS=$(COMMONFLAGS)
 
-$(filter-out $(nocommon_bins), $(dir_bins) $(cpp_bins)): obj/unix/soundrex/main.o
-$(dir_bins) $(cpp_bins): obj/unix/soundrex/common.o
-exec/transmit exec/receive: obj/unix/soundrex/capture.o
+all:
+
+exec/transmit exec/receive: obj/unix/lib/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap
 exec/alsa_play: LDLIBS+=-lasound
-exec/process: obj/soundrex/processor.o
+exec/process: obj/lib/processor.o
 
-obj/%.o: src/%.cpp
+###################   COMPLETELY GENERIC SECTION HENCEFORTH   ####################
+
+rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
+ancestors=$1 $(if $(filter-out $(SRCROOT),$1), $(call ancestors,$(patsubst %/,%,$(dir $1))))
+get_obj=$(patsubst $(SRCROOT)/%, obj/%.o, $1)
+get_exec=$(addprefix exec/,$(notdir $t))
+sub_cpps=$(basename $(call rwildcard,$1/,*.cpp))
+noexec=$(filter-out $1,$(filter $(cpps),$(call ancestors,$1)))$(filter %/lib,$(call ancestors,$1))
+
+cpps=$(call sub_cpps,$(SRCROOT))
+dirs=$(patsubst %//., %, $(call rwildcard,$(SRCROOT)/,/.))
+actives=$(foreach c,$(cpps),$(if $(call noexec,$c),,$c))
+dir_targets=$(filter $(dirs),$(actives))
+
+$(foreach t,$(dir_targets),$(eval $(call get_exec,$t): $(call get_obj,$(call sub_cpps,$t))))
+
+$(foreach t,$(actives), $(eval\
+	$(call get_exec,$t):$(call get_obj,$t $(addsuffix /lib,$(filter-out $t,$(call ancestors,$t))))\
+))
+
+all: $(foreach t,$(actives), $(call get_exec,$t))
+
+obj/%.o: $(SRCROOT)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -33,14 +41,9 @@ exec/%:
 	@mkdir -p exec
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
--include $(deps)
+-include $($(call get_obj,$(cpps)):.o=.d)
 
 clean:
-	rm -rf obj
-	rm -rf exec
+	rm -rf obj exec
 
-.SECONDEXPANSION:
-$(dir_bins): exec/%: $$(call get_objs,$$(wildcard src/unix/%/*.cpp))
-$(cpp_bins): exec/%: $$(call get_objs,src/unix/%.cpp)
-
-.PHONY: all clean receiver transmitter
+.PHONY: all clean

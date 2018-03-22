@@ -1,5 +1,5 @@
 #include <soundrex/constants.h>
-#include <unix/soundrex/main.h>
+#include <soundrex/unix/runtime/lib.h>
 #include <array>
 #include <cstring>
 #include <iostream>

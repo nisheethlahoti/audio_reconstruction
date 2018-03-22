@@ -1,8 +1,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <soundrex/constants.h>
+#include <soundrex/unix/runtime/lib.h>
 #include <sys/socket.h>
-#include <unix/soundrex/main.h>
 #include <iostream>
 
 void soundrex_main(slice_t<char *>) {

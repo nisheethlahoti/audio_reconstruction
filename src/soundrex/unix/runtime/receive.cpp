@@ -1,9 +1,9 @@
 #include <signal.h>
-#include <unix/soundrex/capture.h>
-#include <unix/soundrex/main.h>
+#include <soundrex/unix/lib/capture.h>
+#include <soundrex/unix/runtime/lib.h>
 #include <iomanip>
 #include <iostream>
-#include "multiplexer.h"
+#include "receive/multiplexer.h"
 
 static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();

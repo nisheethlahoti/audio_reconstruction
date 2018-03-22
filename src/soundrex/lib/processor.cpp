@@ -1,5 +1,5 @@
+#include <soundrex/lib/processor.h>
 #include <soundrex/platform_callbacks.h>
-#include <soundrex/processor.h>
 #include <algorithm>
 #include <array>
 #include <atomic>
