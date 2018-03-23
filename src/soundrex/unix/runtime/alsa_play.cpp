@@ -25,12 +25,11 @@ static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
 }
 
 static void play_samples(size_t const len) {
-	snd_pcm_sframes_t frames = snd_pcm_writei(handle, samples, len);
-	if (frames < 0) {
+	snd_pcm_sframes_t frames;
+	while (frames = snd_pcm_writei(handle, samples, len), frames <= 0)
 		snd_pcm_recover(handle, frames, 0);
-	} else if (frames < len) {
+	if (frames < len)
 		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")" << std::endl;
-	}
 }
 
 void soundrex_main(slice_t<char *>) {

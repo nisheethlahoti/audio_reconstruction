@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) try {
 	constexpr auto policy = SCHED_FIFO;
-	sched_param const param{sched_get_priority_min(policy) + 10};
+	sched_param const param{sched_get_priority_max(policy) - 10};
 	pthread_setschedparam(pthread_self(), policy, &param);
 	std::ios::sync_with_stdio(false);
 	soundrex_main({argv + 1, argv + argc});
