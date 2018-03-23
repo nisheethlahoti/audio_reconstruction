@@ -13,7 +13,6 @@ class logger_t {
 
    public:
 	logger_t(char const *fname);
-	~logger_t();
 
 	template <class logtype>
 	inline void log(logtype log_m) {

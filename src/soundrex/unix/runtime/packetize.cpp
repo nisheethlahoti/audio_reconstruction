@@ -19,18 +19,17 @@ void soundrex_main(slice_t<char *> args) {
 	std::default_random_engine gen(12345);
 	std::bernoulli_distribution dist(prob);
 
-	std::cerr << "Dropping packets with probability " << dist.p() << '\n';
+	std::clog << "Dropping packets with probability " << dist.p() << std::endl;
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));
 
-	while (std::cin.read(reinterpret_cast<char *>(buf.samples.data() + buf.trailing.size()),
-	                     sizeof(buf.samples))) {
+	while (buf_read_blocking(buf.samples.data() + buf.trailing.size(), sizeof(buf.samples))) {
 		if (++buf.num % incr == 0)
-			std::cerr << "\rSending packet " << buf.num;
+			std::clog << "\rSending packet " << buf.num << std::flush;
 
 		if (!dist(gen))
-			std::cout.write(reinterpret_cast<char *>(&buf), sizeof(buf));  // assuming little endian
+			buf_write(&buf, sizeof(buf));  // assuming little endian
 		std::memcpy(buf.samples.data(), buf.trailing.data(), sizeof(buf.trailing));
 	}
 
-	std::cerr << std::endl;
+	std::clog << std::endl;
 }

@@ -1,5 +1,5 @@
 #include <soundrex/platform_callbacks.h>
-#include <iostream>
+#include <soundrex/unix/lib.h>
 #include "logger.h"
 
 static logger_t packetlogger("packet.bin"), playlogger("play.bin");
@@ -15,7 +15,7 @@ void play_log(log_t log) {
 }
 
 void write_samples(sample_t const *samples, size_t len) {
-	std::cout.write(reinterpret_cast<char const *>(samples), len * sizeof sample_t());
+	buf_write(samples, len * sizeof sample_t());
 }
 
 #define LOG_TYPE(_, NAME, ...)                                        \

@@ -10,6 +10,7 @@ exec/transmit exec/receive: obj/unix/lib/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap
 exec/alsa_play: LDLIBS+=-lasound
 exec/process: obj/lib/processor.o
+exec/receive exec/packetize: obj/unix/lib/multiplexer.o
 
 ###################   COMPLETELY GENERIC SECTION HENCEFORTH   ####################
 

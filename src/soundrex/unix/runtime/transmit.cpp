@@ -3,7 +3,6 @@
 #include <pcap.h>
 #include <soundrex/unix/lib/capture.h>
 #include <soundrex/unix/runtime/lib.h>
-#include <iostream>
 
 constexpr std::array<uint8_t, 24> const radiotap_hdr = {{
     /*0*/ 0x00, 0x00,  // radiotap version (ignore this)
@@ -54,7 +53,7 @@ void soundrex_main(slice_t<char *> args) {
 	buf[17] = drate;
 	std::vector<capture_t> captures = open_captures(args.subspan(2));
 
-	while (std::cin.read(reinterpret_cast<char *>(packet_loc), sizeof(packet_t)))
+	while (buf_read_blocking(packet_loc, sizeof(packet_t)))
 		for (int i = 0; i < redun; ++i)
 			for (auto &cap : captures)
 				cap.inject({buf.begin(), buf.end()});

@@ -13,12 +13,12 @@ void soundrex_main(slice_t<char *> args) {
 	wrap_error(bind(sockfd, (sockaddr const *)&self, sizeof(self)), "binding socket");
 
 	std::array<sample_t, packet_samples> samples;
-	std::cerr << args[0] << ": reading batches of " << sizeof(samples) << " bytes\n";
+	std::clog << args[0] << ": reading batches of " << sizeof(samples) << " bytes" << std::endl;
 
 	while (int bytes = wrap_error(read(sockfd, &samples, sizeof(samples)), "reading socket")) {
 		if (bytes != sizeof(samples))
-			std::cerr << "Received only " << bytes << " bytes. Ignoring.\n";
+			std::clog << "Received only " << bytes << " bytes. Ignoring." << std::endl;
 		else
-			std::cout.write(reinterpret_cast<char const *>(&samples), sizeof(samples));
+			write(1, &samples, sizeof(samples));
 	}
 }

@@ -29,28 +29,24 @@ static void play_samples(size_t const len) {
 	if (frames < 0) {
 		snd_pcm_recover(handle, frames, 0);
 	} else if (frames < len) {
-		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")\n";
+		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")" << std::endl;
 	}
 }
 
 void soundrex_main(slice_t<char *>) {
-	int err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0);
-	if (err < 0)
+	if (int err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0); err < 0)
 		throw std::runtime_error(std::string("Playback open error: ") + snd_strerror(err));
 
-	if ((err = snd_pcm_set_params(handle,                  // handle
-	                              pcm_format(byte_depth),  // Format of individual channel samples
-	                              SND_PCM_ACCESS_RW_INTERLEAVED,  // Input-output multiplexing
-	                              num_channels,                   // number of channels
-	                              samples_per_s,                  // Sample rate
-	                              1,                              // ?
-	                              packet_samples * 2000000ull / samples_per_s)) < 0)  // Max delay
+	if (int err = snd_pcm_set_params(handle, pcm_format(byte_depth), SND_PCM_ACCESS_RW_INTERLEAVED,
+	                                 num_channels, samples_per_s, 1,
+	                                 packet_samples * 2000000ull / samples_per_s);
+	    err < 0)
 		throw std::runtime_error(std::string("Parameter setting error: ") + snd_strerror(err));
 
-	std::cin.peek();
+	wait_for_input();
 	snd_pcm_prepare(handle);
 	play_samples(fill_samples);
 
-	while (std::cin.read(reinterpret_cast<char *>(samples), num_samples * sizeof samples[0]))
+	while (buf_read_blocking(samples, num_samples * sizeof samples[0]))
 		play_samples(num_samples);
 }

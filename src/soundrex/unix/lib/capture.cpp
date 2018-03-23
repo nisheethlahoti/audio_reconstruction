@@ -14,7 +14,7 @@ int capture_t::getrecv() {
 
 capture_t::capture_t(char const *iface) try {
 	char errbuf[PCAP_ERRBUF_SIZE];
-	std::cerr << "Opening interface " << iface << std::endl;
+	std::clog << "Opening interface " << iface << std::endl;
 	std::strcpy(name_, iface);
 
 	pcap = pcap_create(iface, errbuf);
@@ -31,7 +31,7 @@ capture_t::capture_t(char const *iface) try {
 	if (int ret = pcap_activate(pcap); ret < 0)
 		throw std::pair(pcap, ret);
 	else if (ret > 0)
-		std::cerr << "Warning activating: " << pcap_statustostr(ret) << std::endl;
+		std::clog << "Warning activating: " << pcap_statustostr(ret) << std::endl;
 
 	fd_ = pcap_get_selectable_fd(pcap);
 	if (fd_ == -1)
@@ -81,6 +81,6 @@ std::vector<capture_t> open_captures(slice_t<char const *> names) {
 	for (char const *name : names)
 		trap_error([&captures, name]() { captures.emplace_back(name); });
 
-	std::cerr << captures.size() << " interfaces opened for capture." << std::endl;
+	std::clog << captures.size() << " interfaces opened for capture." << std::endl;
 	return captures;
 }
