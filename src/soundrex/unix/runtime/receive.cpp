@@ -52,7 +52,7 @@ void soundrex_main(slice_t<char *> args) {
 	std::clog << std::fixed << std::setprecision(2);
 	std::clog << "Press Enter to toggle corrections and Ctrl+d to quit" << std::endl;
 
-	while (multiplexer.next(), !multiplexer.is_ready(0) || buf_drain()) {
+	while (multiplexer.next(), !multiplexer.is_ready(0) || buf_drain(0)) {
 		if (multiplexer.is_ready(0))
 			kill(0, SIGURG);  // TODO: Find less horrible way that this.
 

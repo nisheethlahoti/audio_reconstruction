@@ -48,18 +48,12 @@ void soundrex_main(slice_t<char *> args) {
 				std::memcpy(buf.samples.data(), buf.trailing.data(), sizeof(buf.trailing));
 				pos = bstart;
 			}
-		} else {
-			char c;
-			wrap_error(read(2, &c, 1), "reading tty character");
-			if (c == 't') {
-				extra_drops = !extra_drops;
-				std::clog << "Extra drops " << (extra_drops ? "on" : "off") << std::endl;
-			} else if (c == '\r' || c == '\n')
-				kill(0, SIGURG);  // TODO: Find less horrible way that this.
-			else if (c == 'q')
-				break;
-			else
-				std::clog << "Unrecognized input " << int(c) << std::endl;
-		}
+		} else if (size_t val = buf_drain(2); val == 0)
+			break;
+		else if (val == 1) {
+			extra_drops = !extra_drops;
+			std::clog << "Extra drops " << (extra_drops ? "on" : "off") << std::endl;
+		} else
+			kill(0, SIGURG);  // TODO: Find less horrible way that this.
 	}
 }
