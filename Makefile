@@ -2,7 +2,7 @@ SRCROOT=src/soundrex
 CXX=clang++
 COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
 CXXFLAGS=$(COMMONFLAGS) -I src/ -MMD -MP
-LDFLAGS=$(COMMONFLAGS)
+LDFLAGS=$(COMMONFLAGS) -B/usr/lib/gold-ld
 
 all:
 
@@ -22,6 +22,8 @@ sub_cpps=$(basename $(call rwildcard,$1/,*.cpp))
 noexec=$(filter-out $1,$(filter $(cpps),$(call ancestors,$1)))$(filter %/lib,$(call ancestors,$1))
 
 cpps=$(call sub_cpps,$(SRCROOT))
+objs=$(call get_obj,$(cpps))
+deps=$(objs:.o=.d)
 dirs=$(patsubst %//., %, $(call rwildcard,$(SRCROOT)/,/.))
 actives=$(foreach c,$(cpps),$(if $(call noexec,$c),,$c))
 dir_targets=$(filter $(dirs),$(actives))
@@ -42,7 +44,7 @@ exec/%:
 	@mkdir -p exec
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
--include $($(call get_obj,$(cpps)):.o=.d)
+-include $(deps)
 
 clean:
 	rm -rf obj exec
