@@ -28,7 +28,7 @@ static void play_samples(size_t const len) {
 	snd_pcm_sframes_t frames;
 	while (frames = snd_pcm_writei(handle, samples, len), frames <= 0)
 		snd_pcm_recover(handle, frames, 0);
-	if (frames < len)
+	if (static_cast<unsigned long>(frames) < len)
 		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")" << std::endl;
 }
 

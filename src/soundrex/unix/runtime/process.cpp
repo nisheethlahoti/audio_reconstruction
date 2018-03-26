@@ -8,7 +8,7 @@
 static processor_t processor;
 static std::atomic<bool> stopped(false);
 
-static void toggle_corrections(int sigtype) {
+static void toggle_corrections(int) {
 	std::clog << (processor.toggle_corrections() ? "Correcting" : "Not correcting") << std::endl;
 }
 

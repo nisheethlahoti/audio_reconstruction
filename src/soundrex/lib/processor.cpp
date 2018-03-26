@@ -54,10 +54,10 @@ void processor_t::mergewrite_samples(b_const_itr const first, b_const_itr const 
 		write_samples(second->samples.data(), second->samples.size());
 	} else {
 		decltype(first->trailing) samples;
-		for (int i = 0; i < samples.size(); ++i) {
+		for (unsigned i = 0; i < samples.size(); ++i) {
 			sample_t &smp = samples[i];
 			sample_t const &s1 = first->trailing[i], &s2 = second->samples[i];
-			for (int ch = 0; ch < smp.size(); ++ch) {
+			for (unsigned ch = 0; ch < smp.size(); ++ch) {
 				int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
 				int32_t val = v1 + i * (v2 - v1) / ssize_t(samples.size());
 				memcpy(&smp[ch], &val, sizeof smp[ch]);

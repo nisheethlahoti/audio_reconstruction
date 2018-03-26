@@ -25,7 +25,7 @@ class logger_t {
 		}
 		logfile.put(log_m.id);
 
-		for_each(log_m.arg_vals, [this, &log_m](int index, auto const &val) {
+		for_each(log_m.arg_vals, [this](int, auto const &val) {
 			logfile.write(reinterpret_cast<char const *>(&val), sizeof(val));
 		});
 	}

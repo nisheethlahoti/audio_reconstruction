@@ -5,7 +5,7 @@ using namespace std;
 
 template <class logtype>
 void read_log(std::istream &cin, logtype &log_m) {
-	for_each(log_m.arg_vals, [&cin, &log_m](int index, auto &val) {
+	for_each(log_m.arg_vals, [&cin](int, auto &val) {
 		cin.read(reinterpret_cast<char *>(&val), sizeof(val));
 	});
 }
@@ -34,7 +34,7 @@ int main() {
 	cin.read(reinterpret_cast<char *>(&curr_time), 8);
 
 	uint32_t timediff;
-	while ((timediff = cin.get()) != istream::traits_type::eof()) {
+	while (timediff = cin.get(), cin) {
 		cin.read(reinterpret_cast<char *>(&timediff) + 1, timediff & 1 ? 3 : 1);
 		if (~timediff == 0) {
 			cout << "Wrong time: ";
