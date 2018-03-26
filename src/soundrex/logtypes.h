@@ -33,7 +33,7 @@ inline void for_each(tuple_t &&tup, fn_t &&fn) {
 		    {MAP(STRINGCDR, __VA_ARGS__)}};                                        \
 		std::tuple<MAP(APPLYCAR, __VA_ARGS__)> arg_vals;                           \
 		CONCAT(NAME, _log)                                                         \
-		(MAP(APPLYWRITE, __VA_ARGS__)) : arg_vals({MAP(APPLYCDR, __VA_ARGS__)}) {} \
+		(MAP(APPLYWRITE, __VA_ARGS__)) : arg_vals(MAP(APPLYCDR, __VA_ARGS__)) {}   \
 	};
 
 #include <soundrex/logtypes.list>
