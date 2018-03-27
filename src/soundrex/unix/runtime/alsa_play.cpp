@@ -1,6 +1,6 @@
 #include <alsa/asoundlib.h>
 #include <soundrex/unix/runtime/lib.h>
-#include <iostream>
+#include <cstdio>
 
 static constexpr size_t num_samples = packet_samples;
 static constexpr size_t fill_samples = packet_samples / 2;
@@ -29,7 +29,7 @@ static void play_samples(size_t const len) {
 	while (frames = snd_pcm_writei(handle, samples, len), frames <= 0)
 		snd_pcm_recover(handle, frames, 0);
 	if (static_cast<unsigned long>(frames) < len)
-		std::cerr << "Short write (expected " << len << ", wrote " << frames << ")" << std::endl;
+		fprintf(stderr, "Short write (expected %lu, wrote %ld)\n", frames, len);
 }
 
 void soundrex_main(slice_t<char *>) {

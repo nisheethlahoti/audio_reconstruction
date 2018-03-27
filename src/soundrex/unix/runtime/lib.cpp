@@ -10,6 +10,6 @@ int main(int argc, char **argv) try {
 	std::ios::sync_with_stdio(false);
 	soundrex_main({argv + 1, argv + argc});
 } catch (std::runtime_error const &err) {
-	std::cerr << argv[0] << ": " << err.what() << '\n';
+	std::fprintf(stderr, "%s: %s\n", argv[0], err.what());
 	return 1;
 }

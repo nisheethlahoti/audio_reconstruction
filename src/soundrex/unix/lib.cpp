@@ -1,10 +1,9 @@
 #include <sys/select.h>
 #include <unistd.h>
-#include <iostream>
 #include "lib.h"
 
 void trap_error(std::function<void()> func) try { func(); } catch (std::runtime_error &err) {
-	std::cerr << err.what() << std::endl;
+	std::fprintf(stderr, "%s\n", err.what());
 }
 
 size_t buf_read_available(void *buf, size_t count) {
