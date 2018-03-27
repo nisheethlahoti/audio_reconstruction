@@ -23,12 +23,15 @@ inline void for_each(tuple_t &&tup, fn_t &&fn) {
 
 #define WRITE(X, Y) X Y
 #define APPLYWRITE(X) WRITE X
+#define SUM(X, Y) X + Y
+#define SIZEOF(PAIR) sizeof(CAR PAIR)
 
 // Because C++ doesn't have reflection :/
 #define LOG_TYPE(ID, NAME, ...)                                                    \
 	struct CONCAT(NAME, _log) {                                                    \
 		static constexpr char message[] = #NAME;                                   \
 		static constexpr uint8_t id = ID;                                          \
+		static constexpr uint16_t argsize{FOLDR(SIZEOF, SUM, __VA_ARGS__)};        \
 		static constexpr std::array<char const *, NUMARGS(__VA_ARGS__)> arg_names{ \
 		    {MAP(STRINGCDR, __VA_ARGS__)}};                                        \
 		std::tuple<MAP(APPLYCAR, __VA_ARGS__)> arg_vals;                           \
