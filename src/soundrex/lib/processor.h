@@ -13,8 +13,6 @@ class processor_t {
 
 	uint32_t latest_packet_number = 0;
 	std::atomic<b_itr> b_begin = batches.begin(), b_end = batches.begin() + 1;
-
-	bool write_packet(uint8_t const *packet, uint32_t pnum);
 	void mergewrite_samples(b_const_itr first, b_const_itr second) const;
 
    public:

@@ -15,25 +15,15 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 inline static int32_t get_int_sample(mono_sample_t const &smpl) {
-	int32_t ret;
-	memcpy(reinterpret_cast<uint8_t *>(&ret) + (4 - sizeof smpl), &smpl, sizeof smpl);
+	int32_t ret = 0;
+	for (unsigned i = 0; i < sizeof(smpl); ++i)
+		ret |= uint32_t(smpl[i]) << (8 * (4 - sizeof(smpl) + i));
 	return ret >> (8 * (4 - sizeof smpl));
 }
 
-bool processor_t::write_packet(uint8_t const *packet, uint32_t pnum) {
-	b_itr const finish = b_end.load(memory_order_relaxed);
-	if (b_begin.load(memory_order_consume) == finish) {
-		packet_log(full_buffer_log(pnum));
-		return false;
-	} else {
-		finish->num = pnum;
-		memcpy(finish->samples.data(), packet, sizeof finish->samples);
-		memcpy(finish->trailing.data(), packet + sizeof finish->samples, sizeof finish->trailing);
-		b_end.store(finish == batches.end() - 1 ? batches.begin() : finish + 1,
-		            memory_order_release);
-		packet_log(success_log(pnum));
-		return true;
-	}
+inline static void put_int_sample(int32_t val, mono_sample_t &smpl) {
+	for (unsigned i = 0; i < sizeof(smpl); ++i)
+		smpl[i] = (val >> (8 * i)) & 0xff;
 }
 
 void processor_t::process(uint8_t const *packet) {
@@ -42,10 +32,16 @@ void processor_t::process(uint8_t const *packet) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
 	} else if (packet_number == latest_packet_number) {
 		packet_log(repeated_packet_log(packet_number));
+	} else if (b_itr const finish = b_end.load(memory_order_relaxed);
+	           b_begin.load(memory_order_consume) == finish) {
+		packet_log(full_buffer_log(packet_number));
 	} else {
 		latest_packet_number = packet_number;
-		packet_log(validated_log());
-		write_packet(packet + header_size, packet_number);
+		memcpy(finish, packet, sizeof(packet_t));
+		finish->num = packet_number;
+		b_end.store(finish == batches.end() - 1 ? batches.begin() : finish + 1,
+		            memory_order_release);
+		packet_log(success_log(packet_number));
 	}
 }
 
@@ -59,8 +55,7 @@ void processor_t::mergewrite_samples(b_const_itr const first, b_const_itr const 
 			sample_t const &s1 = first->trailing[i], &s2 = second->samples[i];
 			for (unsigned ch = 0; ch < smp.size(); ++ch) {
 				int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
-				int32_t val = v1 + i * (v2 - v1) / ssize_t(samples.size());
-				memcpy(&smp[ch], &val, sizeof smp[ch]);
+				put_int_sample(v1 + i * (v2 - v1) / ssize_t(samples.size()), smp[ch]);
 			}
 		}
 		write_samples(samples.data(), samples.size());
