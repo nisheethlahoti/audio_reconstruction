@@ -1,6 +1,6 @@
 For each cpp file that's a descendant of the 'src/soundrex' folder:
-	If it's named 'lib':
-		It's linked into binaries of all files built in its directory's descendants.
+	If it, or one of its ancestor directories, is named 'lib':
+		It's linked into binaries of all files built in the "lib"s parent's descendants.
 	else if one of its ancestor directories shares its name with a cpp file in that ancestor's parent:
 		It's linked to the latter cpp file's binary.
 	else:
