@@ -5,12 +5,27 @@
 
 snd_pcm_t *capture_handle;
 
+static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
+	switch (byte_depth) {
+		case 1:
+			return SND_PCM_FORMAT_S8;
+		case 2:
+			return SND_PCM_FORMAT_S16_LE;
+		case 3:
+			return SND_PCM_FORMAT_S24_3LE;
+		case 4:
+			return SND_PCM_FORMAT_S32_LE;
+		default:
+			return SND_PCM_FORMAT_UNKNOWN;
+	}
+}
+
 void init_record() {
 	int err;
 	unsigned int rate = samples_per_s;
 	static const char device[] = "plughw:1";
 	snd_pcm_hw_params_t *hw_params;
-	snd_pcm_format_t format = SND_PCM_FORMAT_S32_LE;
+	snd_pcm_format_t format = pcm_format(byte_depth);
 
 	if ((err = snd_pcm_open(&capture_handle, device, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
 		std::cerr << "cannot open audio device " << device << " (" << snd_strerror(err) << ")\n";
@@ -56,7 +71,7 @@ void init_record() {
 
 	std::clog << "hw_params rate setted\n";
 
-	if ((err = snd_pcm_hw_params_set_channels(capture_handle, hw_params, 2)) < 0) {
+	if ((err = snd_pcm_hw_params_set_channels(capture_handle, hw_params, num_channels)) < 0) {
 		std::cerr << "cannot set channel count (" << snd_strerror(err) << ")\n";
 		exit(1);
 	}
@@ -82,8 +97,7 @@ void init_record() {
 	std::clog << "audio interface prepared\n";
 }
 
-typedef std::array<int32_t, 2> inp_sample;
-std::array<inp_sample, packet_samples> buffer;
+std::array<sample_t, packet_samples> buffer;
 
 void soundrex_main(slice_t<char *>) {
 	init_record();
