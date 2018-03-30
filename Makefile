@@ -8,7 +8,7 @@ all:
 
 exec/transmit exec/receive: obj/unix/lib/capture.o
 exec/transmit exec/receive: LDLIBS+=-lpcap
-exec/alsa_play: LDLIBS+=-lasound
+exec/alsa_record exec/alsa_play: LDLIBS+=-lasound
 exec/process: obj/lib/processor.o
 exec/receive exec/packetize: obj/unix/lib/multiplexer.o
 
