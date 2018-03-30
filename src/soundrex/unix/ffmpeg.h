@@ -1,6 +1,8 @@
 #include <soundrex/constants.h>
 
-constexpr std::array<char const *, 4> ffmpeg_init{{"ffmpeg", "-hide_banner", "-v", "error"}};
+constexpr std::array<char const *, 3> ffmpeg_init{{"ffmpeg", "-v", "error"}};
+constexpr std::array<char const *, 7> ffplay_init{
+    {"ffplay", "-nodisp", "-autoexit", "-fflags", "nobuffer", "-v", "error"}};
 
 auto const ffmpeg_params = []() -> auto {
 	static auto const rate = std::to_string(samples_per_s), ch = std::to_string(num_channels);
