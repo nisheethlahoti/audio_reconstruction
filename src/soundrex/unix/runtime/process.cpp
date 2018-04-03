@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <soundrex/lib/processor.h>
+#include <soundrex/platform_callbacks.h>
 #include <soundrex/unix/runtime/lib.h>
 #include <atomic>
 #include <iostream>
@@ -7,10 +8,8 @@
 
 static processor_t processor;
 static std::atomic<bool> stopped(false);
-
-static void toggle_corrections(int) {
-	std::clog << (processor.toggle_corrections() ? "Correcting" : "Not correcting") << std::endl;
-}
+std::queue<packet_t> packets;
+uint32_t nominal = 0;
 
 static void playing_loop() {
 	auto time = std::chrono::steady_clock::now();
@@ -20,16 +19,43 @@ static void playing_loop() {
 	}
 }
 
-void soundrex_main(slice_t<char *>) {
-	struct sigaction action {};
-	action.sa_handler = toggle_corrections;
-	action.sa_flags = SA_RESTART;
-	sigaction(SIGURG, &action, nullptr);  // Toggles on receiving SIGURG
+constexpr reconstruct_t get_recon(char const c) {
+	switch (c) {
+		case 'r':
+			return reconstruct_t::reconstruct;
+		case 'm':
+			return reconstruct_t::sharp_merge;
+		case 's':
+			return reconstruct_t::smooth_merge;
+		case 'w':
+			return reconstruct_t::white_noise;
+		case 'q':
+			return reconstruct_t::silence;
+		default:
+			throw std::runtime_error("First arg rmswq");
+	}
+}
 
+void soundrex_main(slice_t<char *> args) {
+	if (args.empty())
+		throw std::runtime_error(" <type>");
+
+	processor.reconstruct.store(get_recon(args[0][0]), std::memory_order_release);
+	packet_t buf;
+
+	buf_read_blocking(&buf, sizeof(buf));
+	packets.push(buf);
+	processor.process(reinterpret_cast<uint8_t const *>(&buf));
+	buf_read_blocking(&buf, sizeof(buf));
+	packets.push(buf);
+	processor.process(reinterpret_cast<uint8_t const *>(&buf));
 	std::thread player(playing_loop);
-	std::array<uint8_t, sizeof(packet_t)> buf;
-	while (buf_read_blocking(buf.data(), buf.size()))
-		processor.process(buf.data());
+
+	while (buf_read_blocking(&buf, sizeof(buf))) {
+		packets.push(buf);
+		if (!buf.invisible)
+			processor.process(reinterpret_cast<uint8_t const *>(&buf));
+	}
 
 	stopped.store(true, std::memory_order_release);
 	player.join();

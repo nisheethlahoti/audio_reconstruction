@@ -14,20 +14,8 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 	return bytes[0] | uint32_t(bytes[1]) << 8 | uint32_t(bytes[2]) << 16 | uint32_t(bytes[3]) << 24;
 }
 
-inline static int32_t get_int_sample(mono_sample_t const &smpl) {
-	int32_t ret = 0;
-	for (unsigned i = 0; i < sizeof(smpl); ++i)
-		ret |= uint32_t(smpl[i]) << (8 * (4 - sizeof(smpl) + i));
-	return ret >> (8 * (4 - sizeof smpl));
-}
-
-inline static void put_int_sample(int32_t val, mono_sample_t &smpl) {
-	for (unsigned i = 0; i < sizeof(smpl); ++i)
-		smpl[i] = (val >> (8 * i)) & 0xff;
-}
-
 void processor_t::process(uint8_t const *packet) {
-	uint32_t packet_number = get_little_endian(packet);
+	uint32_t packet_number = get_little_endian(packet + 4);
 	if (packet_number < latest_packet_number) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
 	} else if (packet_number == latest_packet_number) {
@@ -45,48 +33,56 @@ void processor_t::process(uint8_t const *packet) {
 	}
 }
 
-void processor_t::mergewrite_samples(b_const_itr const first, b_const_itr const second) const {
-	if (!correction_on.load(memory_order_consume) || second->num == first->num + 1) {
+void mergewrite_samples(reconstruct_t recon, packet_t const *first, packet_t const *second) {
+	if (second->num == first->num + 1) {
 		write_samples(second->samples.data(), second->samples.size());
-	} else {
-		decltype(first->trailing) samples;
-		for (unsigned i = 0; i < samples.size(); ++i) {
-			sample_t &smp = samples[i];
-			sample_t const &s1 = first->trailing[i], &s2 = second->samples[i];
-			for (unsigned ch = 0; ch < smp.size(); ++ch) {
-				int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
-				put_int_sample(v1 + i * (v2 - v1) / ssize_t(samples.size()), smp[ch]);
-			}
+	} else
+		switch (recon) {
+			case reconstruct_t::smooth_merge:
+				smooth_merge(first, second);
+				break;
+			case reconstruct_t::sharp_merge:
+				sharp_merge(first, second);
+				break;
+			case reconstruct_t::silence:
+				silence(first, second);
+				break;
+			case reconstruct_t::white_noise:
+				white_noise(first, second);
+				break;
+			case reconstruct_t::reconstruct:
+				reconstruct(first, second);
+				break;
 		}
-		write_samples(samples.data(), samples.size());
-		write_samples(second->samples.data() + samples.size(),
-		              second->samples.size() - samples.size());
-	}
 }
 
 void processor_t::play_next() {
-	static int further_repeat = 0;
+	static int further_repeat = 0, diff_ok = 1;
 	b_itr const start = b_begin.load(memory_order_relaxed);
 	b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
 
+	reconstruct_t correct = reconstruct.load(memory_order_acquire);
+	nominal = start->num + diff_ok;
 	if (b_end.load(memory_order_acquire) != next) {
 		further_repeat = max_repeat;
-		mergewrite_samples(start, next);
-		b_begin.store(next, memory_order_release);
-		play_log(playing_log(next->num));
+		if (next->num <= start->num + diff_ok || next->num > start->num + max_buf_size) {
+			mergewrite_samples(correct, start, next);
+			b_begin.store(next, memory_order_release);
+			diff_ok = 1;
+			play_log(playing_log(next->num));
+		} else {
+			mergewrite_samples(correct, start, start);
+			play_log(repeat_play_log(start->num));
+			diff_ok++;
+		}
 	} else if (further_repeat) {
 		--further_repeat;
-		mergewrite_samples(start, start);
+		mergewrite_samples(correct, start, start);
 		play_log(repeat_play_log(start->num));
+		diff_ok++;
 	} else {
 		static constexpr array<sample_t, packet_samples> zeroes{};
 		play_log(reader_waiting_log());
 		write_samples(zeroes.data(), zeroes.size());
 	}
-}
-
-bool processor_t::toggle_corrections() {
-	bool corr = correction_on.load(std::memory_order_relaxed);
-	correction_on.store(!corr, std::memory_order_release);
-	return !corr;
 }

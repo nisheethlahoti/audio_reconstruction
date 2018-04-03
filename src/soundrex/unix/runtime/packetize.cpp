@@ -17,13 +17,13 @@ void soundrex_main(slice_t<char *> args) {
 	if (*postp || prob < 0 || prob > 1 || (args.size() > 1 && *postnum) || num < 0)
 		throw std::domain_error("<drop_chance (0.0-1.0)> [<starting_num (unsigned 32-bit)>]");
 
-	packet_t buf{static_cast<uint32_t>(num), {}, {}};
+	packet_t buf{false, static_cast<uint32_t>(num), {}, {}};
 	std::default_random_engine gen(12345);
 	std::bernoulli_distribution dist(prob);
 
 	std::clog << "Will drop with probability " << dist.p() << " when required" << std::endl;
 	unsigned incr = std::max(1u, unsigned(std::chrono::milliseconds(500) / duration));
-	bool extra_drops = false;
+	bool extra_drops = true;
 
 	multiplexer_t multiplexer;
 	multiplexer.add_fd(0);  // For incoming sample stream
@@ -42,8 +42,8 @@ void soundrex_main(slice_t<char *> args) {
 				if (++buf.num % incr == 0)
 					std::clog << buf.num << " sent\r" << std::flush;
 
-				if (!extra_drops || !dist(gen))
-					buf_write(&buf, sizeof(buf));  // assuming little endian
+				buf.invisible = extra_drops && dist(gen);
+				buf_write(&buf, sizeof(buf));  // assuming little endian
 
 				std::memcpy(buf.samples.data(), buf.trailing.data(), sizeof(buf.trailing));
 				pos = bstart;
