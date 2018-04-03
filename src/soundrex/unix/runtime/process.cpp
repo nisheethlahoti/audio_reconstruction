@@ -13,16 +13,16 @@ constexpr reconstruct_t get_recon(char const c) {
 	switch (c) {
 		case 'r':
 			return reconstruct_t::reconstruct;
-		case 'm':
+		case 'p':
 			return reconstruct_t::sharp_merge;
-		case 's':
+		case 'm':
 			return reconstruct_t::smooth_merge;
 		case 'w':
 			return reconstruct_t::white_noise;
 		case 'q':
 			return reconstruct_t::silence;
 		default:
-			throw std::runtime_error("First arg rmswq");
+			throw std::runtime_error("First arg rpmwq");
 	}
 }
 
