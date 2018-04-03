@@ -1,6 +1,5 @@
 #include <signal.h>
 #include <soundrex/lib/processor.h>
-#include <soundrex/platform_callbacks.h>
 #include <soundrex/unix/runtime/lib.h>
 #include <atomic>
 #include <iostream>
@@ -8,8 +7,6 @@
 
 static processor_t processor;
 static std::atomic<bool> stopped(false);
-std::queue<packet_t> packets;
-uint32_t nominal = 0;
 
 static void playing_loop() {
 	auto time = std::chrono::steady_clock::now();
@@ -44,18 +41,13 @@ void soundrex_main(slice_t<char *> args) {
 	packet_t buf;
 
 	buf_read_blocking(&buf, sizeof(buf));
-	packets.push(buf);
 	processor.process(reinterpret_cast<uint8_t const *>(&buf));
 	buf_read_blocking(&buf, sizeof(buf));
-	packets.push(buf);
 	processor.process(reinterpret_cast<uint8_t const *>(&buf));
 	std::thread player(playing_loop);
 
-	while (buf_read_blocking(&buf, sizeof(buf))) {
-		packets.push(buf);
-		if (!buf.invisible)
-			processor.process(reinterpret_cast<uint8_t const *>(&buf));
-	}
+	while (buf_read_blocking(&buf, sizeof(buf)))
+		processor.process(reinterpret_cast<uint8_t const *>(&buf));
 
 	stopped.store(true, std::memory_order_release);
 	player.join();

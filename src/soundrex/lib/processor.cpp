@@ -15,7 +15,7 @@ static inline uint32_t get_little_endian(uint8_t const *bytes) {
 }
 
 void processor_t::process(uint8_t const *packet) {
-	uint32_t packet_number = get_little_endian(packet + 4);
+	uint32_t packet_number = get_little_endian(packet);
 	if (packet_number < latest_packet_number) {
 		packet_log(older_packet_log(latest_packet_number, packet_number));
 	} else if (packet_number == latest_packet_number) {
@@ -62,7 +62,6 @@ void processor_t::play_next() {
 	b_itr const next = start == batches.end() - 1 ? batches.begin() : start + 1;
 
 	reconstruct_t correct = reconstruct.load(memory_order_acquire);
-	nominal = start->num + diff_ok;
 	if (b_end.load(memory_order_acquire) != next) {
 		further_repeat = max_repeat;
 		if (next->num <= start->num + diff_ok || next->num > start->num + max_buf_size) {
@@ -71,15 +70,15 @@ void processor_t::play_next() {
 			diff_ok = 1;
 			play_log(playing_log(next->num));
 		} else {
+			diff_ok++;
 			mergewrite_samples(correct, start, start);
 			play_log(repeat_play_log(start->num));
-			diff_ok++;
 		}
 	} else if (further_repeat) {
 		--further_repeat;
+		diff_ok++;
 		mergewrite_samples(correct, start, start);
 		play_log(repeat_play_log(start->num));
-		diff_ok++;
 	} else {
 		static constexpr array<sample_t, packet_samples> zeroes{};
 		play_log(reader_waiting_log());

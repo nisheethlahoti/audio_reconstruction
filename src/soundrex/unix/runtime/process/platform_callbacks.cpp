@@ -1,7 +1,6 @@
 #include <soundrex/platform_callbacks.h>
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <limits>
 #include <random>
 #include "logger.h"
@@ -129,24 +128,10 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 		    samples[i][0]);
 	}
 	/*for (int i = 0; i < 30; ++i) {
-	    int32_t level = prev_samples[(buf_pos + prev_samples.size() - 30 + i) %
-	prev_samples.size()]; int64_t const val = get_int_sample(samples[i][0]); put_int_sample(level +
-	i * (val - level) / 30, samples[i][0]);
+		int32_t level = prev_samples[(buf_pos + prev_samples.size() - 30 + i) % prev_samples.size()];
+		int64_t const val = get_int_sample(samples[i][0]);
+		put_int_sample(level + i * (val - level) / 30, samples[i][0]);
 	}*/
-	while (!packets.empty() && packets.front().num != nominal) {
-		// std::cerr << packets.size() << ' ' << nominal << ' ' << packets.front().num << ' ' <<
-		// second->num << ' ' << first->num << std::endl;
-		packets.pop();
-	}
-	for (unsigned i = 0; i < packet_samples; ++i) {
-		sample_t &smp = samples[i];
-		sample_t const &s1 = samples[i], &s2 = packets.front().samples[i];
-		for (unsigned ch = 0; ch < smp.size(); ++ch) {
-			int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
-			put_int_sample((v1 + v2) / 2, smp[ch]);
-		}
-	}
-
 	if (first->num == second->num) {
 		write_samples(samples.data(), samples.size());
 	} else {
@@ -162,8 +147,6 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 		write_samples(second->samples.data() + trailing_samples,
 		              second->samples.size() - trailing_samples);
 	}
-	if (!packets.empty())
-		packets.pop();
 }
 
 #define LOG_TYPE(_, NAME, ...)                                        \
