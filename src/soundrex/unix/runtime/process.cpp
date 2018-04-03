@@ -4,20 +4,10 @@
 #include <soundrex/unix/runtime/lib.h>
 #include <atomic>
 #include <iostream>
-#include <thread>
 
 static processor_t processor;
-static std::atomic<bool> stopped(false);
 std::queue<packet_t> packets;
 uint32_t nominal = 0;
-
-static void playing_loop() {
-	auto time = std::chrono::steady_clock::now();
-	while (!stopped.load(std::memory_order_acquire)) {
-		std::this_thread::sleep_until(time += duration);
-		processor.play_next();
-	}
-}
 
 constexpr reconstruct_t get_recon(char const c) {
 	switch (c) {
@@ -46,17 +36,11 @@ void soundrex_main(slice_t<char *> args) {
 	buf_read_blocking(&buf, sizeof(buf));
 	packets.push(buf);
 	processor.process(reinterpret_cast<uint8_t const *>(&buf));
-	buf_read_blocking(&buf, sizeof(buf));
-	packets.push(buf);
-	processor.process(reinterpret_cast<uint8_t const *>(&buf));
-	std::thread player(playing_loop);
 
 	while (buf_read_blocking(&buf, sizeof(buf))) {
 		packets.push(buf);
 		if (!buf.invisible)
 			processor.process(reinterpret_cast<uint8_t const *>(&buf));
+		processor.play_next();
 	}
-
-	stopped.store(true, std::memory_order_release);
-	player.join();
 }

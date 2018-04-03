@@ -4,6 +4,7 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -63,6 +64,16 @@ void processor_t::play_next() {
 
 	reconstruct_t correct = reconstruct.load(memory_order_acquire);
 	nominal = start->num + diff_ok;
+	if (packets.empty()) {
+		std::cerr << "Whaaa\n";
+	} else
+		while (packets.front().num != nominal) {
+			packets.pop();
+			if (packets.empty()) {
+				std::cerr << "Whaaa\n";
+				break;
+			}
+		}
 	if (b_end.load(memory_order_acquire) != next) {
 		further_repeat = max_repeat;
 		if (next->num <= start->num + diff_ok || next->num > start->num + max_buf_size) {
