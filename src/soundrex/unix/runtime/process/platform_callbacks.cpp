@@ -137,9 +137,9 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 		                          prev_samples[sample_reduce *
 		                                           get_pos(ssize_t(i / sample_reduce) - best_diff) +
 		                                       i % sample_reduce]) -
-		                  prev_sums[get_pos(-best_diff)] / ssize_t(reduced_samples)) *
+		                  prev_sums[get_pos(-best_diff-1)] / ssize_t(reduced_samples)) *
 		                         signum +
-		                     prev_sums[buf_pos] / ssize_t(reduced_samples)))) /
+		                     prev_sums[get_pos(-1)] / ssize_t(reduced_samples)))) /
 		        sample_reduce,
 		    samples[i][0]);
 	}
@@ -148,16 +148,16 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 	prev_samples.size()]; int64_t const val = get_int_sample(samples[i][0]); put_int_sample(level +
 	i * (val - level) / 30, samples[i][0]);
 	}*/
-	for (unsigned i = 0; i < trailing_samples / 2; ++i) {
+	for (int i = 0; i < ssize_t(trailing_samples / 2); ++i) {
 		sample_t &smp = samples[i];
-		sample_t const &s1 = samples[i], &s2 = packets.front().samples[i];
+		sample_t const &s2 = samples[i], &s1 = packets.front().samples[i];
 		for (unsigned ch = 0; ch < smp.size(); ++ch) {
 			int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
 			put_int_sample(v1 + i * (v2 - v1) / ssize_t(trailing_samples / 2), smp[ch]);
 		}
 		sample_t &smpx = samples[packet_samples - 1 - i];
-		sample_t const &s3 = samples[packet_samples - 1 - i],
-		               &s4 = packets.front().samples[packet_samples - 1 - i];
+		sample_t const &s4 = samples[packet_samples - 1 - i],
+		               &s3 = packets.front().samples[packet_samples - 1 - i];
 		for (unsigned ch = 0; ch < smp.size(); ++ch) {
 			int64_t const v1 = get_int_sample(s3[ch]), v2 = get_int_sample(s4[ch]);
 			put_int_sample(v1 + i * (v2 - v1) / ssize_t(trailing_samples / 2), smpx[ch]);
@@ -169,16 +169,16 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 		for (unsigned ch = 0; ch < smp.size(); ++ch) {
 			int64_t const v1 = get_int_sample(s1[ch]), v2 = get_int_sample(s2[ch]);
 			if (best_correl > 0.95)
-			put_int_sample((v1 + 3 * v2) / 4, smp[ch]);
+			put_int_sample((v1 +  v2) / 2, smp[ch]);
 			else
-			put_int_sample((v1 + 15 * v2) / 16, smp[ch]);
+			put_int_sample((v1 + 2 * v2) / 3, smp[ch]);
 		}
 	}
 
 	if (first->num == second->num) {
 		write_samples(samples.data(), samples.size());
 	} else {
-		for (unsigned i = 0; i < trailing_samples; ++i) {
+		for (int i = 0; i < ssize_t(trailing_samples); ++i) {
 			sample_t &smp = samples[i];
 			sample_t const &s1 = samples[i], &s2 = second->samples[i];
 			for (unsigned ch = 0; ch < smp.size(); ++ch) {
