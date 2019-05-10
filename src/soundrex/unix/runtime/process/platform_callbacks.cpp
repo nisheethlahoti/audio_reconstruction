@@ -1,6 +1,8 @@
 #include <soundrex/platform_callbacks.h>
 #include <cassert>
+#include <cmath>
 #include <cstring>
+#include <iostream>
 #include <limits>
 #include <random>
 #include "logger.h"
@@ -30,20 +32,29 @@ void play_log(log_t log) {
 }
 
 static constexpr size_t sample_reduce = 4;
-static constexpr size_t reduced_samples = packet_samples / sample_reduce;
+static constexpr ssize_t reduced_samples = packet_samples / sample_reduce;
 static std::array<int32_t, reduced_samples * 3> prev_buf{};
 static std::array<int32_t, packet_samples * 3> prev_samples{};
 static std::array<int32_t, prev_buf.size()> prev_sums{};
+static std::array<int64_t, prev_buf.size()> prev_sqsums{};
 static size_t buf_pos = 0;
 
 static inline size_t get_pos(ssize_t val) {
 	return (buf_pos + static_cast<size_t>(val + prev_buf.size())) % prev_buf.size();
 }
 
-void write_samples(sample_t const *samples, size_t len) {
+inline int64_t sq(int64_t val) { return val * val; }
+
+bool write_samples(sample_t const *samples, size_t len) {
 	assert(num_channels == 1 && packet_samples % sample_reduce == 0);
 	assert(len % sample_reduce == 0);
 	buf_write(samples, len * sizeof(sample_t));
+	bool copy = false;
+	int32_t val = get_int_sample(samples[0][0]);
+	for (unsigned i = 0; i < len; ++i)
+		copy = copy || get_int_sample(samples[i][0]) != val;
+	if (!copy)
+		return val == 0;
 	for (unsigned i = 0; i < len / sample_reduce; ++i) {
 		prev_buf[buf_pos] = 0;
 		for (unsigned j = 0; j < sample_reduce; ++j) {
@@ -51,10 +62,13 @@ void write_samples(sample_t const *samples, size_t len) {
 			prev_buf[buf_pos] += sample;
 			prev_samples[sample_reduce * buf_pos + j] = sample;
 		}
-		prev_sums[buf_pos] = prev_sums[get_pos(-1)] + prev_buf[buf_pos] -
-		                     prev_buf[get_pos(-ssize_t(reduced_samples))];
+		prev_sums[get_pos(1)] =
+		    prev_sums[buf_pos] + prev_buf[buf_pos] - prev_buf[get_pos(-reduced_samples)];
+		prev_sqsums[get_pos(1)] =
+		    prev_sqsums[buf_pos] + sq(prev_buf[buf_pos]) - sq(prev_buf[get_pos(-reduced_samples)]);
 		buf_pos = get_pos(1);
 	}
+	return true;
 }
 
 void smooth_merge(packet_t const *const first, packet_t const *const second) {
@@ -96,44 +110,85 @@ void white_noise(packet_t const *const first, packet_t const *const second) {
 		write_samples(second->samples.data(), second->samples.size());
 }
 
-void reconstruct(packet_t const *const first, packet_t const *const second) {
-	int64_t max_inner = 0;
-	ssize_t best_diff;
-	int64_t signum;
-	for (ssize_t diff = reduced_samples; diff < ssize_t(2 * reduced_samples); ++diff) {
-		int64_t inner = 0;
-		for (ssize_t i = 0; i < ssize_t(reduced_samples); ++i)
-			inner += int64_t(prev_buf[get_pos(-i)]) * prev_buf[get_pos(-diff - i)];
-		inner -= int64_t(prev_sums[buf_pos]) * prev_sums[get_pos(-diff)] / ssize_t(reduced_samples);
-		if (std::abs(inner) > max_inner) {
-			signum = inner >= 0 ? 1 : -1;
-			best_diff = diff;
-			max_inner = std::abs(inner);
+inline double devsum(size_t pos) {
+	static size_t pax = 0, dof = 0;
+	++pax;
+	auto x = std::sqrt(prev_sqsums[pos] - double(sq(prev_sums[pos])) / reduced_samples);
+	if ((std::abs(x) <= 0.01 || x != x) && pax >= 1000) {
+		++dof;
+		if (dof > 1000) {
+			std::cerr << x << std::endl;
+			std::cerr << prev_sqsums[pos] << ' ' << prev_sums[pos] << std::endl;
+			std::cerr << prev_sqsums[pos] << ' ' << prev_sums[pos] << std::endl;
+			for (int i = 1; i <= reduced_samples; ++i)
+				for (unsigned j = 0; j < sample_reduce; ++j)
+					std::cerr << prev_samples[sample_reduce * get_pos(-i) + j] << ' ';
+			std::cerr << std::endl;
+			throw "Give up";
 		}
 	}
+	return x;
+}
+
+void reconstruct(packet_t const *const first, packet_t const *const second) {
+	double best_correl = 0;
+	ssize_t best_diff;
+	double signum;
+	for (ssize_t diff = reduced_samples; diff < 2 * reduced_samples; ++diff) {
+		int64_t inner = 0;
+		for (ssize_t i = 1; i <= reduced_samples; ++i)
+			inner += int64_t(prev_buf[get_pos(-i)]) * prev_buf[get_pos(-diff - i)];
+		inner -= int64_t(prev_sums[buf_pos]) * prev_sums[get_pos(-diff)] / reduced_samples;
+		double correl = double(inner) / devsum(buf_pos) / devsum(get_pos(-diff));
+		// std::clog << correl << std::endl;
+		if (std::abs(correl) > best_correl) {
+			signum = inner >= 0 ? 1 : -1;
+			signum *= devsum(buf_pos) / devsum(get_pos(-diff));
+			best_diff = diff;
+			best_correl = std::abs(correl);
+		}
+	}
+	if (second->num == 134) {
+		std::cerr << best_correl << ' ' << best_diff << std::endl;
+		for (int i = 1; i <= reduced_samples; ++i)
+			for (unsigned j = 0; j < sample_reduce; ++j)
+				std::cerr << prev_samples[sample_reduce * get_pos(-i) + j] << ' ';
+		std::cerr << std::endl;
+		std::cerr << "Signum is " << signum << std::endl;
+	}
+	if (best_correl != best_correl) {
+		best_correl = 0.001;
+		best_diff = -1;
+	}
+	if (second->num % 20 == 0)
+	std::clog << best_correl << "   " << signum << "          \r" << std::flush;
 	decltype(second->samples) samples;
 	for (size_t i = 0; i < samples.size(); ++i) {
 		put_int_sample(
-		    (std::min(
+		    std::min(
 		        int64_t(std::numeric_limits<int32_t>::max()),
 		        std::max(int64_t(std::numeric_limits<int32_t>::min()),
-		                 (int64_t(sample_reduce *
-		                          prev_samples[sample_reduce *
+		                 int64_t((int64_t(prev_samples[sample_reduce *
 		                                           get_pos(ssize_t(i / sample_reduce) - best_diff) +
 		                                       i % sample_reduce]) -
-		                  prev_sums[get_pos(-best_diff)] / ssize_t(reduced_samples)) *
-		                         signum +
-		                     prev_sums[buf_pos] / ssize_t(reduced_samples)))) /
-		        sample_reduce,
+		                  prev_sums[get_pos(-best_diff)] / ssize_t(packet_samples)) *
+		                         signum) +
+		                     prev_sums[buf_pos] / ssize_t(packet_samples))),
 		    samples[i][0]);
+		if (second->num == 134) {
+			std::cerr << prev_samples[sample_reduce * get_pos(ssize_t(i / sample_reduce) - best_diff) +
+			             i % sample_reduce] << ' ';
+			//std::cerr << get_int_sample(samples[i][0]) << ' ';
+		}
 	}
 	/*for (int i = 0; i < 30; ++i) {
-		int32_t level = prev_samples[(buf_pos + prev_samples.size() - 30 + i) % prev_samples.size()];
-		int64_t const val = get_int_sample(samples[i][0]);
-		put_int_sample(level + i * (val - level) / 30, samples[i][0]);
+	    int32_t level = prev_samples[(buf_pos + prev_samples.size() - 30 + i) %
+	prev_samples.size()]; int64_t const val = get_int_sample(samples[i][0]); put_int_sample(level +
+	i * (val - level) / 30, samples[i][0]);
 	}*/
 	if (first->num == second->num) {
-		write_samples(samples.data(), samples.size());
+		if (!write_samples(samples.data(), samples.size()))
+			throw std::runtime_error(std::to_string(second->num) + " merged");
 	} else {
 		for (unsigned i = 0; i < trailing_samples; ++i) {
 			sample_t &smp = samples[i];
@@ -143,9 +198,12 @@ void reconstruct(packet_t const *const first, packet_t const *const second) {
 				put_int_sample(v1 + i * (v2 - v1) / ssize_t(trailing_samples), smp[ch]);
 			}
 		}
-		write_samples(samples.data(), trailing_samples);
-		write_samples(second->samples.data() + trailing_samples,
-		              second->samples.size() - trailing_samples);
+		if (!write_samples(samples.data(), trailing_samples))
+			throw std::runtime_error(std::to_string(second->num) + " with " +
+			                         std::to_string(first->num));
+		if (!write_samples(second->samples.data() + trailing_samples,
+		                   second->samples.size() - trailing_samples))
+			throw std::runtime_error("What even " + std::to_string(second->num));
 	}
 }
 

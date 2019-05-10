@@ -40,7 +40,7 @@ void soundrex_main(slice_t<char *> args) {
 				break;
 			} else if ((pos += done) == bend) {
 				if (++buf.num % incr == 0)
-					std::clog << buf.num << " sent\r" << std::flush;
+					;//std::clog << buf.num << " sent\r" << std::flush;
 
 				if (!extra_drops || !dist(gen))
 					buf_write(&buf, sizeof(buf));  // assuming little endian

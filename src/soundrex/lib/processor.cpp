@@ -35,7 +35,8 @@ void processor_t::process(uint8_t const *packet) {
 
 void mergewrite_samples(reconstruct_t recon, packet_t const *first, packet_t const *second) {
 	if (second->num == first->num + 1) {
-		write_samples(second->samples.data(), second->samples.size());
+		if (!write_samples(second->samples.data(), second->samples.size()))
+			throw std::runtime_error(std::to_string(second->num));
 	} else
 		switch (recon) {
 			case reconstruct_t::smooth_merge:

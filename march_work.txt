@@ -1,0 +1,20 @@
+1. make the error term to be max(0, |nabla|-1) * (distance of the random line you sampled)
+2. try variation with that ::distance of random line:: being taken in the direction of the nabla itself.
+3. make the weights to be something like integral of sigmoid of gradient of weights
+
+
+
+
+We can, now, receive our input from either the adc, or a recorded file (in any format), or over a socket from an external source. We can either send this input over wifi or internally over a pipe, and then either play the received input, or record it, or do multiple things together (like recording and playing)
+
+=> We can simulate additional drops at the user-requested rate, and change corrections on and off at the receiver end, all with real-time keypresses
+=> We handle all error conditions gracefully by undoing all changes, printing the error, and exiting if need be.
+=> Everything here runs with correct schedulings, with a very, very low latency for wifi and very, very few underruns for playing
+=> We also print packet-reception stats continuously.
+
+=> It's trivially easy to change the sample rate, bit rate, length of packet, channels etc. You just have to change one number in one place.
+=> The code, meanwhile, is extremely portable, to the point that it already runs without change on Mac, Desktop Linux and r-pi; and a large part of it can be used even for microcontrollers.
+=> It's also fairly easy to extend to a scenario when the communication is not over 802.11 but something entirely different (like the internet)
+
+=> We have a logging system that is type-safe, very efficient and easy to extend
+=> Any change to any part of the process, be it improving the algorithm, or using a different library for wifi, or real-time priorities, needs to be done in only one place (and is reflected across the different modes of taking input/processing/outputting)

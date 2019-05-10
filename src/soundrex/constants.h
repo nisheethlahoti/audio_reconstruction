@@ -8,7 +8,7 @@ constexpr std::array<uint8_t, 6> pin = {{0xc3, 0x24, 0x80, 0x30, 0xcd, 0xa8}};
 constexpr size_t header_size = 4;  // contains only packet number now
 
 constexpr size_t packet_samples = 240, trailing_samples = packet_samples / 2;
-constexpr uint32_t samples_per_s = 48000;
+constexpr uint32_t samples_per_s = 44100;
 constexpr size_t byte_depth = 2, num_channels = 1;
 
 constexpr size_t total_samples = packet_samples + trailing_samples;
