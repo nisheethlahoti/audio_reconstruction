@@ -1,7 +1,8 @@
-#include <soundrex/constants.h>
-#include <soundrex/util.h>
 #include <functional>
 #include <system_error>
+
+#include <soundrex/constants.hpp>
+#include <soundrex/util.hpp>
 
 void trap_error(std::function<void()> func);
 void wait_for_input() noexcept(false);
@@ -12,7 +13,7 @@ size_t buf_read_available(void *buf, size_t count) noexcept(false);
 size_t buf_drain(int buf) noexcept(false);
 
 // Blocks until it's read count bytes, returns false on EOF and true on read successful
-bool buf_read_blocking(void *buf, size_t count) noexcept(false);  
+bool buf_read_blocking(void *buf, size_t count) noexcept(false);
 
 template <typename T>
 T wrap_error(T inp, char const *descr, T guard = -1) noexcept(false) {

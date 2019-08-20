@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <cstring>
-#include "logger.h"
+
+#include "logger.hpp"
 
 logger_t::logger_t(char const *fname)
     : fd(wrap_error(open(fname, O_WRONLY | O_CREAT | O_TRUNC, 0664), fname)) {

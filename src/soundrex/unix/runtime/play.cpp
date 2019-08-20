@@ -1,6 +1,7 @@
-#include <soundrex/unix/ffmpeg.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <unistd.h>
+
+#include <soundrex/unix/ffmpeg.hpp>
+#include <soundrex/unix/runtime/lib.hpp>
 
 void soundrex_main(slice_t<char *>) {
 	std::array<char const *, 2> const in({"-", nullptr});

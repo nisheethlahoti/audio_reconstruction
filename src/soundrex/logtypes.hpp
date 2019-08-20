@@ -1,11 +1,12 @@
 #ifndef SOUNDREX_LOGTYPES_H
 #define SOUNDREX_LOGTYPES_H
 
-#include <soundrex/generic_macros.h>
 #include <array>
 #include <cstdint>
 #include <tuple>
 #include <utility>
+
+#include <soundrex/generic_macros.hpp>
 
 template <class tuple_t, size_t... sizes, class fn_t>
 static inline void for_each_impl(std::index_sequence<sizes...>, tuple_t &&tup, fn_t &&fn) {

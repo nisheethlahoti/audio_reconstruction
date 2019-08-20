@@ -1,13 +1,13 @@
-#include <soundrex/logtypes.h>
 #include <iostream>
+
+#include <soundrex/logtypes.hpp>
 
 using namespace std;
 
 template <class logtype>
 void read_log(std::istream &cin, logtype &log_m) {
-	for_each(log_m.arg_vals, [&cin](int, auto &val) {
-		cin.read(reinterpret_cast<char *>(&val), sizeof(val));
-	});
+	for_each(log_m.arg_vals,
+	         [&cin](int, auto &val) { cin.read(reinterpret_cast<char *>(&val), sizeof(val)); });
 }
 
 template <class logtype>

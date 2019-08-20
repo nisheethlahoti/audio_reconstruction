@@ -1,5 +1,6 @@
-#include <soundrex/constants.h>
 #include <string>
+
+#include <soundrex/constants.hpp>
 
 constexpr std::array<char const *, 3> ffmpeg_init{{"ffmpeg", "-v", "error"}};
 constexpr std::array<char const *, 7> ffplay_init{

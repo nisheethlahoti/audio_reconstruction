@@ -1,7 +1,8 @@
 #include <pthread.h>
 #include <sched.h>
 #include <iostream>
-#include "lib.h"
+
+#include "lib.hpp"
 
 int main(int argc, char **argv) try {
 	constexpr auto policy = SCHED_FIFO;

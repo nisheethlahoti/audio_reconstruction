@@ -1,10 +1,11 @@
 #include <signal.h>
-#include <soundrex/unix/lib/capture.h>
-#include <soundrex/unix/lib/multiplexer.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+#include <soundrex/unix/lib/capture.hpp>
+#include <soundrex/unix/lib/multiplexer.hpp>
+#include <soundrex/unix/runtime/lib.hpp>
 
 static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();

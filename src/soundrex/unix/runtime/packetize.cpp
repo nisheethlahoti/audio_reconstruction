@@ -1,11 +1,12 @@
 #include <signal.h>
-#include <soundrex/unix/lib/multiplexer.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <unistd.h>
 #include <array>
 #include <cstring>
 #include <iostream>
 #include <random>
+
+#include <soundrex/unix/lib/multiplexer.hpp>
+#include <soundrex/unix/runtime/lib.hpp>
 
 void soundrex_main(slice_t<char *> args) {
 	char *postp, *postnum;

@@ -1,5 +1,6 @@
-#include <soundrex/constants.h>
 #include <atomic>
+
+#include <soundrex/constants.hpp>
 
 // None of its public functions can be called from more than one thread.
 // However, each of them can be called from its own separate thread.
@@ -16,7 +17,7 @@ class processor_t {
 	void mergewrite_samples(b_const_itr first, b_const_itr second) const;
 
    public:
-	void process(uint8_t const * packet);
+	void process(uint8_t const *packet);
 	void play_next();
 	bool toggle_corrections();  // Returns whether corrections are now on.
 };

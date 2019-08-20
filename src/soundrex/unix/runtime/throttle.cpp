@@ -1,5 +1,6 @@
-#include <soundrex/unix/runtime/lib.h>
 #include <thread>
+
+#include <soundrex/unix/runtime/lib.hpp>
 
 void soundrex_main(slice_t<char *>) {
 	std::array<sample_t, packet_samples> buffer;

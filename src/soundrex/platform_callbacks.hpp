@@ -1,7 +1,7 @@
 // Callbacks that must be defined by the platform
 
-#include <soundrex/constants.h>
-#include <soundrex/logtypes.h>
+#include <soundrex/constants.hpp>
+#include <soundrex/logtypes.hpp>
 
 void write_samples(sample_t const *samples, size_t len);
 

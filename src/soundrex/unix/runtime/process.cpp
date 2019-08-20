@@ -1,9 +1,10 @@
 #include <signal.h>
-#include <soundrex/lib/processor.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <atomic>
 #include <iostream>
 #include <thread>
+
+#include <soundrex/lib/processor.hpp>
+#include <soundrex/unix/runtime/lib.hpp>
 
 static processor_t processor;
 static std::atomic<bool> stopped(false);

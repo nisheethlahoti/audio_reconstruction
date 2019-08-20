@@ -1,9 +1,10 @@
-#include <soundrex/lib/processor.h>
-#include <soundrex/platform_callbacks.h>
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cstring>
+
+#include <soundrex/lib/processor.hpp>
+#include <soundrex/platform_callbacks.hpp>
 
 using namespace std;
 

@@ -1,7 +1,8 @@
 #include <fcntl.h>
-#include <soundrex/unix/ffmpeg.h>
-#include <soundrex/unix/lib.h>
 #include <unistd.h>
+
+#include <soundrex/unix/ffmpeg.hpp>
+#include <soundrex/unix/lib.hpp>
 
 int main(int argc, char **argv) try {
 	if (argc != 2)

@@ -1,7 +1,8 @@
 #include <alsa/asoundlib.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <cstring>
 #include <iostream>
+
+#include <soundrex/unix/runtime/lib.hpp>
 
 static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
 	switch (byte_depth) {

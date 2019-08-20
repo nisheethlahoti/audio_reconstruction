@@ -1,7 +1,8 @@
 #include <net/if.h>
 #include <pcap.h>
-#include <soundrex/util.h>
 #include <vector>
+
+#include <soundrex/util.hpp>
 
 class capture_t {
 	pcap_t *pcap;

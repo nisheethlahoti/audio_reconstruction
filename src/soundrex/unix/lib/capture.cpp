@@ -1,7 +1,8 @@
-#include <soundrex/unix/lib.h>
 #include <cstring>
 #include <iostream>
-#include "capture.h"
+
+#include <soundrex/unix/lib.hpp>
+#include "capture.hpp"
 
 int capture_t::fd() const { return fd_; }
 char const *capture_t::name() const { return name_; }

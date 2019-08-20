@@ -1,6 +1,7 @@
 #include <sys/select.h>
 #include <unistd.h>
-#include "lib.h"
+
+#include "lib.hpp"
 
 void trap_error(std::function<void()> func) try { func(); } catch (std::runtime_error &err) {
 	std::fprintf(stderr, "%s\n", err.what());

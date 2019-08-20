@@ -1,11 +1,12 @@
-#include <soundrex/logtypes.h>
-#include <soundrex/unix/lib.h>
 #include <unistd.h>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <tuple>
 #include <utility>
+
+#include <soundrex/logtypes.hpp>
+#include <soundrex/unix/lib.hpp>
 
 /// Thread-unsafe logging class.
 class logger_t {

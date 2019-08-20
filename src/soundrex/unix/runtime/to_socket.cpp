@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
-#include <soundrex/unix/runtime/lib.h>
 #include <sys/socket.h>
+
+#include <soundrex/unix/runtime/lib.hpp>
 
 void soundrex_main(slice_t<char *>) {
 	sockaddr_in dest;

@@ -1,5 +1,5 @@
-#include <soundrex/platform_callbacks.h>
-#include "logger.h"
+#include <soundrex/platform_callbacks.hpp>
+#include "logger.hpp"
 
 static logger_t packetlogger("packet.bin"), playlogger("play.bin");
 
