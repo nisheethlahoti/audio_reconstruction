@@ -1,5 +1,5 @@
-#include <signal.h>
 #include <atomic>
+#include <csignal>
 #include <iostream>
 #include <thread>
 
@@ -21,7 +21,7 @@ static void playing_loop() {
 	}
 }
 
-void soundrex_main(slice_t<char *>) {
+void soundrex_main(std::span<char* const>) {
 	struct sigaction action {};
 	action.sa_handler = toggle_corrections;
 	action.sa_flags = SA_RESTART;

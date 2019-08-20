@@ -17,11 +17,11 @@ class capture_t {
 	int fd() const;
 	char const *name() const;
 
-	slice_t<unsigned char> get_packet() noexcept(false);
-	void inject(slice_t<unsigned char>) noexcept(false);
+	std::span<unsigned char const> get_packet() noexcept(false);
+	void inject(std::span<unsigned char>) noexcept(false);
 
 	void setfilter(char const *) noexcept(false);
 	int getrecv();
 };
 
-std::vector<capture_t> open_captures(slice_t<char const *> names);
+std::vector<capture_t> open_captures(std::span<char const *const> names);

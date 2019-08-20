@@ -2,7 +2,7 @@
 
 #include <soundrex/unix/runtime/lib.hpp>
 
-void soundrex_main(slice_t<char *>) {
+void soundrex_main(std::span<char* const>) {
 	std::array<sample_t, packet_samples> buffer;
 	std::chrono::time_point<std::chrono::steady_clock> time{};
 

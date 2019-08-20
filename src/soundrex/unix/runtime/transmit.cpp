@@ -39,12 +39,12 @@ constexpr std::array<uint8_t, 32> mac_header = {{
     /*26*/ 0x03,  0x00,   0x00,   0x00,   0x08,   0x00     // SNAP field
 }};
 
-void soundrex_main(slice_t<char *> args) {
+void soundrex_main(std::span<char *const> args) {
 	if (args.size() < 2)
 		throw std::domain_error("<2*bitrate> <redundancy> <ifaces...>");
 
 	std::array<uint8_t, radiotap_hdr.size() + mac_header.size() + sizeof(packet_t) + 4> buf;
-	uint8_t *const packet_loc = copy_all<uint8_t>(buf.data(), {radiotap_hdr, mac_header});
+	uint8_t *const packet_loc = copy_all<uint8_t const>(buf.data(), {radiotap_hdr, mac_header});
 
 	char *prate, *predun;
 	long const drate = std::strtol(args[0], &prate, 0), redun = std::strtol(args[1], &predun, 0);

@@ -19,7 +19,7 @@ static constexpr snd_pcm_format_t pcm_format(int const byte_depth) {
 	}
 }
 
-void soundrex_main(slice_t<char *>) {
+void soundrex_main(std::span<char *const>) {
 	snd_pcm_t *handle;
 	static constexpr char device[] = "default"; /* playback device */
 	std::array<sample_t, packet_samples> buffer;

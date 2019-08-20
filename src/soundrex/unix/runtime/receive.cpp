@@ -1,4 +1,4 @@
-#include <signal.h>
+#include <csignal>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -32,7 +32,7 @@ static std::string const filter_str = []() -> auto {
 }
 ();
 
-void soundrex_main(slice_t<char *> args) {
+void soundrex_main(std::span<char *const> args) {
 	if (args.empty())
 		throw std::domain_error("<redundancy> <ifaces...>");
 

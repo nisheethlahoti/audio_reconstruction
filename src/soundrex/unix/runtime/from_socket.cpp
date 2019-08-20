@@ -4,7 +4,7 @@
 
 #include <soundrex/unix/runtime/lib.hpp>
 
-void soundrex_main(slice_t<char *> args) {
+void soundrex_main(std::span<char *const> args) {
 	sockaddr_in self;
 	self.sin_family = AF_INET;
 	self.sin_addr.s_addr = args.empty() ? htonl(INADDR_ANY) : inet_addr(args[0]);

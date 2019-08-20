@@ -1,6 +1,6 @@
-#include <signal.h>
 #include <unistd.h>
 #include <array>
+#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <random>
@@ -8,7 +8,7 @@
 #include <soundrex/unix/lib/multiplexer.hpp>
 #include <soundrex/unix/runtime/lib.hpp>
 
-void soundrex_main(slice_t<char *> args) {
+void soundrex_main(std::span<char *const> args) {
 	char *postp, *postnum;
 	if (args.empty())
 		throw std::domain_error("<drop_chance> [<starting_num>]");

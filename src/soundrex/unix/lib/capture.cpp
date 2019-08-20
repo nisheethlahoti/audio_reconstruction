@@ -48,7 +48,7 @@ capture_t::capture_t(capture_t &&other) {
 	other.pcap = nullptr;
 }
 
-slice_t<uint8_t> capture_t::get_packet() {
+std::span<unsigned char const> capture_t::get_packet() {
 	pcap_pkthdr *header;
 	u_char const *packet;
 	int ret = pcap_next_ex(pcap, &header, &packet);
@@ -60,7 +60,7 @@ slice_t<uint8_t> capture_t::get_packet() {
 	return {packet + header_len, packet + header->caplen};
 }
 
-void capture_t::inject(slice_t<uint8_t> packet) {
+void capture_t::inject(std::span<uint8_t> packet) {
 	if (pcap_sendpacket(pcap, packet.data(), packet.size()) != 0)
 		throw std::runtime_error(std::string("packet injection: ") + pcap_geterr(pcap));
 }
@@ -76,7 +76,7 @@ capture_t::~capture_t() {
 		pcap_close(pcap);
 }
 
-std::vector<capture_t> open_captures(slice_t<char const *> names) {
+std::vector<capture_t> open_captures(std::span<char const *const> names) {
 	std::vector<capture_t> captures;
 	captures.reserve(names.size());
 	for (char const *name : names)
