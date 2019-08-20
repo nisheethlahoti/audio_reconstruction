@@ -2,6 +2,7 @@
 #define SOUNDREX_LOGTYPES_H
 
 #include <soundrex/generic_macros.h>
+#include <array>
 #include <cstdint>
 #include <tuple>
 #include <utility>

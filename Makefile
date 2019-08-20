@@ -1,6 +1,6 @@
 SRCROOT=src/soundrex
 CXX=clang++
-COMMONFLAGS=-std=gnu++1z -pthread -Ofast -flto
+COMMONFLAGS=-std=gnu++2a -pthread -Ofast -flto -stdlib=libc++
 CXXFLAGS=$(COMMONFLAGS) -I src/ -MMD -MP -Wall -Wextra
 LDFLAGS=$(COMMONFLAGS) -B/usr/lib/gold-ld
 

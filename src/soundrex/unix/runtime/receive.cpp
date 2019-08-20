@@ -4,6 +4,7 @@
 #include <soundrex/unix/runtime/lib.h>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 static inline void report_drops(int redundancy, std::vector<capture_t> &captures) {
 	static auto time = std::chrono::steady_clock::now();
